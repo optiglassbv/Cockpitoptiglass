@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Optiglass Foto</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --blauw: #1e3a5f;
+    --accent: #2d6ef7;
+    --groen: #16a34a;
+    --rood: #dc2626;
+    --oranje: #f59e0b;
+    --bg: #f0f4f8;
+    --card: #ffffff;
+    --border: #e2e8f0;
+    --text: #1a202c;
+    --muted: #718096;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--blauw);
+    padding: 52px 20px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .header-logo {
+    width: 36px;
+    height: 36px;
+    background: white;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .header-title { color: white; font-size: 18px; font-weight: 700; }
+  .header-sub { color: rgba(255,255,255,.6); font-size: 12px; }
+
+  /* MAIN */
+  .main { padding: 20px 16px; max-width: 480px; margin: 0 auto; }
+
+  /* CARD */
+  .card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+  .card-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  /* INPUT */
+  .input-wrap { position: relative; margin-bottom: 4px; }
+  .input-wrap svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+  input {
+    width: 100%;
+    padding: 14px 14px 14px 40px;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    font-size: 16px;
+    font-family: inherit;
+    background: #f8fafc;
+    color: var(--text);
+    outline: none;
+    transition: border-color .15s;
+  }
+  input:focus { border-color: var(--accent); background: white; }
+  input::placeholder { color: var(--muted); }
+
+  /* JOB INFO */
+  .job-info {
+    display: none;
+    background: #eff6ff;
+    border: 1.5px solid #bfdbfe;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-top: 12px;
+  }
+  .job-info.zichtbaar { display: block; }
+  .job-naam { font-size: 15px; font-weight: 700; color: var(--blauw); }
+  .job-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .job-niet-gevonden {
+    display: none;
+    background: #fef2f2;
+    border: 1.5px solid #fecaca;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--rood);
+  }
+  .job-niet-gevonden.zichtbaar { display: block; }
+
+  /* FOTO VAKJES */
+  .foto-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .foto-vak {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #f8fafc;
+    border: 2px dashed var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .foto-vak:active { background: #f0f4f8; border-color: var(--accent); }
+  .foto-vak.heeft-foto { border-style: solid; border-color: var(--accent); }
+  .foto-vak img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .foto-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--muted);
+    position: relative;
+    z-index: 1;
+  }
+  .foto-vak.heeft-foto .foto-label { display: none; }
+  .foto-vak.heeft-foto::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,.4) 0%, transparent 50%);
+  }
+  .foto-badge {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    color: var(--text);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+    z-index: 2;
+    display: none;
+  }
+  .foto-vak.heeft-foto .foto-badge { display: block; }
+  .foto-verwijder {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 26px;
+    height: 26px;
+    background: rgba(0,0,0,.5);
+    border-radius: 50%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 3;
+    border: none;
+    cursor: pointer;
+    color: white;
+    font-size: 14px;
+    line-height: 1;
+  }
+  .foto-vak.heeft-foto .foto-verwijder { display: flex; }
+
+  /* BUTTON */
+  .btn-opslaan {
+    width: 100%;
+    padding: 16px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: opacity .15s, transform .1s;
+    -webkit-user-select: none;
+  }
+  .btn-opslaan:active { opacity: .85; transform: scale(.98); }
+  .btn-opslaan:disabled { opacity: .4; cursor: not-allowed; }
+  .btn-opslaan.succes { background: var(--groen); }
+
+  /* STATUS */
+  .status {
+    text-align: center;
+    font-size: 13px;
+    color: var(--muted);
+    padding: 8px 0;
+    min-height: 28px;
+  }
+  .status.ok { color: var(--groen); font-weight: 600; }
+  .status.fout { color: var(--rood); font-weight: 600; }
+  .status.bezig { color: var(--accent); }
+
+  /* LOADER */
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2.5px solid rgba(255,255,255,.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* NAAM RESULTATEN */
+  .naam-resultaat {
+    padding: 12px 14px;
+    border-radius: 10px;
+    margin-bottom: 6px;
+    background: #f8fafc;
+    border: 1.5px solid var(--border);
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+  }
+  .naam-resultaat:active { background: #eff6ff; border-color: var(--accent); }
+  .naam-resultaat-klant { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+  .naam-resultaat-jobs { font-size: 12px; color: var(--muted); }
+  .naam-resultaat-ob {
+    display: inline-block;
+    background: #eff6ff;
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin: 2px 3px 2px 0;
+    cursor: pointer;
+  }
+
+  /* RECENTE JOBS */
+  .recente-job {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .recente-job:last-child { border-bottom: none; }
+  .recente-job:active { opacity: .7; }
+  .rj-ob {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    min-width: 80px;
+  }
+  .rj-naam { font-size: 13px; font-weight: 600; flex: 1; }
+  .rj-fotos { display: flex; gap: 4px; }
+  .rj-fotos img {
+    width: 30px; height: 30px;
+    border-radius: 6px;
+    object-fit: cover;
+    border: 1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">
+    <svg width="22" height="22" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="100" cy="100" rx="90" ry="55" stroke="#1e3a5f" stroke-width="18" fill="none"/>
+      <circle cx="100" cy="100" r="28" fill="#2d6ef7"/>
+      <circle cx="100" cy="100" r="14" fill="#1e3a5f"/>
+    </svg>
+  </div>
+  <div>
+    <div class="header-title">Optiglass Foto</div>
+    <div class="header-sub">Foto's voor / na herstel</div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- ZOEK -->
+  <div class="card">
+    <div class="card-title">Opdracht opzoeken</div>
+    <div id="laad-status" style="display:none;font-size:12px;color:var(--muted);margin-bottom:8px;text-align:center;">Laden...</div>
+
+    <!-- TABS -->
+    <div style="display:flex;gap:0;background:#f0f4f8;border-radius:10px;padding:3px;margin-bottom:14px;">
+      <button id="tab-ob" onclick="setZoekTab('ob')" style="flex:1;padding:8px;border:none;border-radius:8px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;background:white;color:#1e3a5f;box-shadow:0 1px 3px rgba(0,0,0,.1);transition:all .15s;">
+        Orderbon
+      </button>
+      <button id="tab-naam" onclick="setZoekTab('naam')" style="flex:1;padding:8px;border:none;border-radius:8px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;background:transparent;color:#718096;transition:all .15s;">
+        Klantnaam
+      </button>
+    </div>
+
+    <!-- ORDERBON INPUT -->
+    <div id="zoek-ob-wrap">
+      <div class="input-wrap">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#718096" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6M9 13h4"/></svg>
+        <input type="text" id="zoek-ob-input" placeholder="OB-2026-..." oninput="zoekJob(this.value)" autocomplete="off" autocorrect="off" autocapitalize="characters">
+      </div>
+    </div>
+
+    <!-- NAAM INPUT -->
+    <div id="zoek-naam-wrap" style="display:none;">
+      <div class="input-wrap">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#718096" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" id="zoek-naam-input" placeholder="Naam klant of optiek..." oninput="zoekOpNaam(this.value)" autocomplete="off">
+      </div>
+      <!-- RESULTATEN LIJST -->
+      <div id="naam-resultaten" style="margin-top:8px;display:none;"></div>
+    </div>
+
+    <div class="job-info" id="job-info">
+      <div class="job-naam" id="job-naam"></div>
+      <div class="job-meta" id="job-meta"></div>
+    </div>
+    <div class="job-niet-gevonden" id="job-niet-gevonden">Niet gevonden</div>
+  </div>
+
+  <!-- FOTO'S -->
+  <div class="card" id="foto-card" style="display:none;">
+    <div class="card-title">Foto's toevoegen</div>
+    <div class="foto-grid">
+
+      <!-- VOOR -->
+      <div class="foto-vak" id="vak-voor" onclick="kiesFoto('voor')">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#cbd5e0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>
+        </svg>
+        <div class="foto-label">Voor</div>
+        <img id="img-voor" src="" style="display:none;">
+        <div class="foto-badge">Voor herstel</div>
+        <button class="foto-verwijder" onclick="verwijderFoto(event,'voor')">×</button>
+      </div>
+
+      <!-- NA -->
+      <div class="foto-vak" id="vak-na" onclick="kiesFoto('na')">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#cbd5e0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>
+        </svg>
+        <div class="foto-label">Na</div>
+        <img id="img-na" src="" style="display:none;">
+        <div class="foto-badge">Na herstel</div>
+        <button class="foto-verwijder" onclick="verwijderFoto(event,'na')">×</button>
+      </div>
+
+    </div>
+
+    <input type="file" id="file-input" accept="image/*" capture="environment" style="display:none;" onchange="verwerkFoto(event)">
+
+    <div class="status" id="status"></div>
+
+    <button class="btn-opslaan" id="btn-opslaan" onclick="opslaan()" disabled>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      Foto's opslaan
+    </button>
+  </div>
+
+  <!-- RECENTE MET FOTOS -->
+  <div class="card" id="recente-card" style="display:none;">
+    <div class="card-title">Opgeslagen foto's</div>
+    <div id="recente-lijst"></div>
+  </div>
+
+</div>
+
+<script>
+const SUPABASE_URL = 'https://cbvauuubuwcqzmesxwpj.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNidmF1dXVidXdjcXptZXN4d3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0MzExMjcsImV4cCI6MjA5MjAwNzEyN30.NF9X6T3Wg7knekChn1tbsj_kSfDwpo_lG97g0hkrWfU';
+
+let huidigJobId = null;
+let fotoTarget = null;
+let fotoVoor = null;
+let fotoNa = null;
+let alleJobs = [];
+let alleClients = [];
+
+// Klantendatabase (500+ klanten uit onFact)
+const CLIENTS_DB = [{"id": "onfact_19022", "naam": "MB - LENSES (Optiek Brabanders)", "contactpersoon": "", "email": "info\u0040contactlenzenonline.be", "telefoon": "011821819", "adres": "OPPELSENWEG 87, 3520 ZONHOVEN", "btw": "BE0650.687.975", "notitie": "", "onfactId": "19022", "volgnummer": "B00005"}, {"id": "onfact_19023", "naam": "Putmans Optiek Bvba", "contactpersoon": "", "email": "optiek.putmans\u0040skynet.be", "telefoon": "011221692", "adres": "Kortstraat 4, 3500 Hasselt", "btw": "BE0446.699.450", "notitie": "", "onfactId": "19023", "volgnummer": "B00024"}, {"id": "onfact_19025", "naam": "Tavans Optical Bvba", "contactpersoon": "", "email": "tackoen.tavans\u0040skynet.be", "telefoon": "011229194", "adres": "Havermarkt 4, 3500 Hasselt", "btw": "BE0433.207.938", "notitie": "", "onfactId": "19025", "volgnummer": "B00025"}, {"id": "onfact_19004", "naam": "Tiba BV (Bas Optiek)", "contactpersoon": "", "email": "info\u0040bas-optiek.be", "telefoon": "", "adres": "Heuveneindeweg 42/A, 3520 Zonhoven", "btw": "BE0886162504", "notitie": "", "onfactId": "19004", "volgnummer": "B00026"}, {"id": "onfact_19026", "naam": "Optiek Kristien Maris BV", "contactpersoon": "", "email": "info\u0040optiek-kristienmaris.be", "telefoon": "011215522", "adres": "Banneuxstraat 4, 3500 Hasselt", "btw": "BE0831.963.555", "notitie": "", "onfactId": "19026", "volgnummer": "B00027"}, {"id": "onfact_19027", "naam": "Stephs-Vision Bvba", "contactpersoon": "", "email": "info\u0040bervoets.be", "telefoon": "011234406", "adres": "Paalsesteenweg 4, 3580 Beringen", "btw": "BE0892.960.917", "notitie": "", "onfactId": "19027", "volgnummer": "B00028"}, {"id": "onfact_19029", "naam": "Van Impe-scheerlinck VOF", "contactpersoon": "", "email": "info\u0040optiekvanimpe.be", "telefoon": "053838037", "adres": "Oudenaardsesteenweg 377, 9420 Erpe-Mere", "btw": "BE0645510551", "notitie": "", "onfactId": "19029", "volgnummer": "B00035"}, {"id": "onfact_19509", "naam": "MARTENS & MATHOT ZIEN & HOREN", "contactpersoon": "", "email": "optiekmartens\u0040planet.nl", "telefoon": "", "adres": "PLANKSTRAAT 00009, 6211GA MAASTRICHT", "btw": "NL8574.45.017.B01", "notitie": "", "onfactId": "19509", "volgnummer": "B00040"}, {"id": "onfact_19030", "naam": "Optiek Mommen BVBA", "contactpersoon": "", "email": "info\u0040optiekmommen.be", "telefoon": "011538361", "adres": "Molenstraat 15, 3550 Heusden-Zolder", "btw": "BE0840.154.612", "notitie": "", "onfactId": "19030", "volgnummer": "B00042"}, {"id": "onfact_183028", "naam": "Optiek Raquel Staeren", "contactpersoon": "", "email": "info\u0040optiekstaeren.be", "telefoon": "089704756", "adres": "TURFSTRAAT 115, 3600 GENK", "btw": "BE0699425131", "notitie": "", "onfactId": "183028", "volgnummer": "B00044"}, {"id": "onfact_183030", "naam": "Optiek Mercken BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "VISÉSTEENWEG 153, 3770 RIEMST", "btw": "BE0451.432.258", "notitie": "", "onfactId": "183030", "volgnummer": "B00045"}, {"id": "onfact_19032", "naam": "Optiek Gobba", "contactpersoon": "", "email": "optiek.gobba\u0040telenet.be", "telefoon": "011685691", "adres": "Luikerstraat 55, 3800 Sint-Truiden", "btw": "BE0641.530.383", "notitie": "", "onfactId": "19032", "volgnummer": "B00046"}, {"id": "onfact_19005", "naam": "Bruninx Design Optics BV", "contactpersoon": "", "email": "info\u0040bruninx.be", "telefoon": "", "adres": "Kapelstraat 53, 3500 Hasselt", "btw": "BE0444.896.537", "notitie": "", "onfactId": "19005", "volgnummer": "B00047"}, {"id": "onfact_21457", "naam": "Optiek Liesbet BV", "contactpersoon": "", "email": "optiek.liesbet\u0040telenet.be", "telefoon": "011392880", "adres": "Oude Markt 4/A, 3900 Pelt", "btw": "BE.0721.783.631", "notitie": "", "onfactId": "21457", "volgnummer": "B00048"}, {"id": "onfact_32420", "naam": "BVBA OPTIEK CARLA VANGRONSVELD", "contactpersoon": "", "email": "optiek.carlavangronsveld\u0040skynet.be", "telefoon": "", "adres": "KLOKKESTRAAT 7, 3740 BILZEN", "btw": "BE0452306347", "notitie": "", "onfactId": "32420", "volgnummer": "B00049"}, {"id": "onfact_187849", "naam": "BVBA OPTIEK MOREAU", "contactpersoon": "", "email": "optiekmoreau\u0040skynet.be", "telefoon": "", "adres": "KLOOSTERSTRAAT 27, 3910 NEERPELT", "btw": "BE0471.993.882", "notitie": "", "onfactId": "187849", "volgnummer": "B00053"}, {"id": "onfact_187850", "naam": "Optiek KRUIJEN", "contactpersoon": "", "email": "niels.kruijen\u0040yucom.be", "telefoon": "", "adres": "Marktplein 39, 3590 Diepenbeek", "btw": "BE0638.394.513", "notitie": "", "onfactId": "187850", "volgnummer": "B00054"}, {"id": "onfact_24871", "naam": "Optiek Geyskens-goyens BV", "contactpersoon": "", "email": "boekhouding\u0040optiekgeyskens.be", "telefoon": "", "adres": "Botermarkt 13, 3290 Diest", "btw": "BE0426120109", "notitie": "", "onfactId": "24871", "volgnummer": "B00056"}, {"id": "onfact_187852", "naam": "Optiek Coens", "contactpersoon": "", "email": "optiek.coens\u0040telenet.be", "telefoon": "", "adres": "Nieuwstraat 25, 9990 MALDEGEM", "btw": "BE0874.225.366", "notitie": "", "onfactId": "187852", "volgnummer": "B00060"}, {"id": "onfact_187928", "naam": "NV OPTIEK CUYX", "contactpersoon": "", "email": "info\u0040optiekcuyx.be", "telefoon": "011/81.37.89", "adres": "KERKPLEIN 6, 3520 ZONHOVEN", "btw": "BE0433.649.584", "notitie": "", "onfactId": "187928", "volgnummer": "B00064"}, {"id": "onfact_187929", "naam": "Optiek van den Wijngaert", "contactpersoon": "", "email": "optiekvdwijngaert\u0040scarlet.be", "telefoon": "015/235372", "adres": "LEUVENSEBAAN 18, 2223 HEIST-OP-DEN-BERG", "btw": "BE0630.304.020", "notitie": "", "onfactId": "187929", "volgnummer": "B00065"}, {"id": "onfact_187930", "naam": "BVBA OPTIEK MERTENS", "contactpersoon": "", "email": "info\u0040optiekmertens.be", "telefoon": "016262272", "adres": "LEUVENSESTRAAT 1, 3010 LEUVEN", "btw": "BE0460.737.033", "notitie": "", "onfactId": "187930", "volgnummer": "B00067"}, {"id": "onfact_187932", "naam": "Optiek Bonne", "contactpersoon": "", "email": "info\u0040optiekbonne.be", "telefoon": "093365345", "adres": "Dendermondesteenweg 511, 9070 DESTELBERGEN", "btw": "BE0879.086.155", "notitie": "", "onfactId": "187932", "volgnummer": "B00068"}, {"id": "onfact_187933", "naam": "BVBA OPTIEK  DUPONT", "contactpersoon": "", "email": "optiek.dupont\u0040skynet.be", "telefoon": "015 244353", "adres": "BERGSTRAAT 40, 2220 HEIST-OP-DEN-BERG", "btw": "BE0877.341.739", "notitie": "", "onfactId": "187933", "volgnummer": "B00070"}, {"id": "onfact_32434", "naam": "BVBA OPTIEK STEPHAN TRUYERS", "contactpersoon": "", "email": "optiek.truyers\u0040skynet.be", "telefoon": "", "adres": "DORPSSTRAAT 5, 3530 HOUTHALEN-HELCHTEREN", "btw": "BE0462430078", "notitie": "", "onfactId": "32434", "volgnummer": "B00072"}, {"id": "onfact_32435", "naam": "BVBA OPTIEK HABEX", "contactpersoon": "", "email": "info\u0040theohabex.be", "telefoon": "", "adres": "STATIONSSTRAAT 24, 3600 GENK", "btw": "BE0414468924", "notitie": "", "onfactId": "32435", "volgnummer": "B00073"}, {"id": "onfact_20700", "naam": "BVBA VAN OMMESLAEGHE", "contactpersoon": "", "email": "hilde.staelens\u0040vanommeslaeghe.be", "telefoon": "055/311801", "adres": "NEDERSTRAAT 20, 9700 OUDENAARDE", "btw": "BE0466441623", "notitie": "", "onfactId": "20700", "volgnummer": "B00075"}, {"id": "onfact_19377", "naam": "Optiek R. Haerens Bvba", "contactpersoon": "", "email": "rai\u0040optiekhaerens.be", "telefoon": "", "adres": "Hofkwartier 11, 2200 Herentals", "btw": "BE0424.948.090", "notitie": "", "onfactId": "19377", "volgnummer": "B00076"}, {"id": "onfact_32437", "naam": "BVBA OPTIEK VAN DEN BOSCH", "contactpersoon": "", "email": "info\u0040optiekfritsvandenbosch.be", "telefoon": "", "adres": "TURNHOUTSEBAAN 31-33, 2100 ANTWERPEN", "btw": "BE0438024284", "notitie": "", "onfactId": "32437", "volgnummer": "B00077"}, {"id": "onfact_22867", "naam": "VVZRL VANDORMAEL FRANK & TOM", "contactpersoon": "", "email": "vandormael.optiek\u0040telenet.be", "telefoon": "", "adres": "LUIKERSTRAAT 25, 3800 SINT-TRUIDEN", "btw": "BE0641431405", "notitie": "", "onfactId": "22867", "volgnummer": "B00078"}, {"id": "onfact_19378", "naam": "Mulders Nv", "contactpersoon": "", "email": "info\u0040muldersoptiek.be", "telefoon": "", "adres": "Westelsebaan 97, 3271 Scherpenheuvel-Zichem", "btw": "BE0442.956.537", "notitie": "", "onfactId": "19378", "volgnummer": "B00080"}, {"id": "onfact_187934", "naam": "VOF OPTIEK DEVLOO", "contactpersoon": "", "email": "optiek.devloo\u0040skynet.be", "telefoon": "058 51 68 71", "adres": "LEOPOLD II LAAN(ODK) 21, 8670 KOKSIJDE", "btw": "BE0455.223.077", "notitie": "", "onfactId": "187934", "volgnummer": "B00081"}, {"id": "onfact_20346", "naam": "Bi Optics Bvba", "contactpersoon": "", "email": "info\u0040bioptics.be", "telefoon": "", "adres": "Bredabaan 220, 2930 Brasschaat", "btw": "BE0461.928.351", "notitie": "", "onfactId": "20346", "volgnummer": "B00082"}, {"id": "onfact_187936", "naam": "MVR MW SMEKENS CHANTAL", "contactpersoon": "", "email": "optiek.smekens\u0040telenet.be", "telefoon": "09/3612132", "adres": "PROVINCIEWEG 340 A, 9550 HERZELE", "btw": "BE0737.242.164", "notitie": "", "onfactId": "187936", "volgnummer": "B00083"}, {"id": "onfact_187937", "naam": "DE MAN OPTIEK", "contactpersoon": "", "email": "philippe.de.man\u0040telenet.be", "telefoon": "056/203741", "adres": "VEEMARKT(KOR) 1, 8500 KORTRIJK", "btw": "BE0524.465.538", "notitie": "", "onfactId": "187937", "volgnummer": "B00086"}, {"id": "onfact_32393", "naam": "BVBA OPTIEK MANU ROBEYNS", "contactpersoon": "", "email": "manu.robeyns\u0040euphonynet.be", "telefoon": "", "adres": "MARKT 13, 2480 DESSEL", "btw": "BE0824983416", "notitie": "", "onfactId": "32393", "volgnummer": "B00087"}, {"id": "onfact_32438", "naam": "BVBA OPTIEK VAN GORP", "contactpersoon": "", "email": "info\u0040optiekvangorp.be", "telefoon": "", "adres": "GASTHUISSTRAAT 6/1, 2340 BEERSE", "btw": "BE0425709046", "notitie": "", "onfactId": "32438", "volgnummer": "B00088"}, {"id": "onfact_32402", "naam": "Optiek Edith Nys", "contactpersoon": "", "email": "info\u0040optieknys.be", "telefoon": "", "adres": "St-Willibrodusplein 13, 3550 Heusden-Zolder", "btw": "BE904345321", "notitie": "", "onfactId": "32402", "volgnummer": "B00089"}, {"id": "onfact_32432", "naam": "EBVBA OPTIEK ROTERMAN", "contactpersoon": "", "email": "roterman.optiek\u0040skynet.be", "telefoon": "", "adres": "SCHEPERSWEG 75, 3600 GENK", "btw": "BE0476130636", "notitie": "", "onfactId": "32432", "volgnummer": "B00091"}, {"id": "onfact_32423", "naam": "MW ROBEYNS, FRANÉOISE", "contactpersoon": "", "email": "", "telefoon": "", "adres": "KRONENHOEKSTRAAT(SGW) 0040, 9170 SINT-GILLIS-WAAS", "btw": "BE0593924169", "notitie": "", "onfactId": "32423", "volgnummer": "B00092"}, {"id": "onfact_32425", "naam": "DHR GEEBELEN, PHILIP (Optiek Geebelen)", "contactpersoon": "", "email": "optiekgeebelen\u0040skynet.be", "telefoon": "", "adres": "MOSSELERLAAN 7, 3600 GENK", "btw": "BE0638303253", "notitie": "", "onfactId": "32425", "volgnummer": "B00093"}, {"id": "onfact_20699", "naam": "CV Optico", "contactpersoon": "", "email": "administratie\u0040scherpesteen.be", "telefoon": "011/222257", "adres": "Demerstraat 2, 3500 Hasselt", "btw": "BE0475153807", "notitie": "", "onfactId": "20699", "volgnummer": "B00094"}, {"id": "onfact_32413", "naam": "MELENS OPTIEK V.O.F.", "contactpersoon": "", "email": "melensoptiek\u0040hetnet.nl", "telefoon": "", "adres": "RING 00010, 3214AT ZUIDLAND", "btw": "NL819126196B01", "notitie": "", "onfactId": "32413", "volgnummer": "B00095"}, {"id": "onfact_187939", "naam": "NV OPTIEK VANOVERSCHELDE", "contactpersoon": "", "email": "w.vanoverschelde\u0040telenet.be", "telefoon": "016818965", "adres": "MINDERBROEDERSSTRAAT 6, 3300 TIENEN", "btw": "BE0446.007.780", "notitie": "", "onfactId": "187939", "volgnummer": "B00096"}, {"id": "onfact_187940", "naam": "CENTER OPTIEK", "contactpersoon": "", "email": "info\u0040optiekcenter.be", "telefoon": "057/48.94.45", "adres": "ZONNEBEKESTRAAT 5, 8920 LANGEMARK", "btw": "", "notitie": "", "onfactId": "187940", "volgnummer": "C00097"}, {"id": "onfact_32406", "naam": "BVBA IFORU", "contactpersoon": "", "email": "optiek\u0040hurbin.be", "telefoon": "", "adres": "KOORSTRAAT 12, 3510 HASSELT", "btw": "BE0432276144", "notitie": "", "onfactId": "32406", "volgnummer": "B00099"}, {"id": "onfact_19529", "naam": "Nathalie Bladt BV", "contactpersoon": "", "email": "accounting\u0040nathaliebladt.com", "telefoon": "016/584944", "adres": "Mechelsestraat 29, 3000 Leuven", "btw": "BE0723.540.420", "notitie": "", "onfactId": "19529", "volgnummer": "B00101"}, {"id": "onfact_187941", "naam": "BVBA OPTIEK VERCRUYSSE", "contactpersoon": "", "email": "verovercruysse\u0040skynet.be", "telefoon": "09/385 99 09", "adres": "STEENWEG 125, 9810 NAZARETH", "btw": "BE0878.537.116", "notitie": "", "onfactId": "187941", "volgnummer": "B00102"}, {"id": "onfact_187943", "naam": "OPTIEK KATLEEN THYS", "contactpersoon": "", "email": "optiek.katleenthys\u0040skynet.be", "telefoon": "011/ 53 19 54", "adres": "KAZERNELAAN 18, 3530 HELCHTEREN", "btw": "", "notitie": "", "onfactId": "187943", "volgnummer": "C00103"}, {"id": "onfact_32426", "naam": "BVBA OPTIEK ILSE GERARD", "contactpersoon": "", "email": "", "telefoon": "", "adres": "KOOLMIJNLAAN 237, 3582 BERINGEN", "btw": "BE0473755423", "notitie": "", "onfactId": "32426", "volgnummer": "B00104"}, {"id": "onfact_187944", "naam": "OPTIEK DE MEULENAER", "contactpersoon": "", "email": "optiek.demeulenaer\u0040telenet.be", "telefoon": "052/ 52 37 68", "adres": "BIEZESTRAAT 18, 9220 HAMME (VL.)", "btw": "BE0886.348.980", "notitie": "", "onfactId": "187944", "volgnummer": "B00105"}, {"id": "onfact_187945", "naam": "BVBA OPTIEK BUYSE", "contactpersoon": "", "email": "optieikbuyse\u0040telenet.be", "telefoon": "050/ 41 24 20", "adres": "KERKSTRAAT 81, 8370 BLANKENBERGE", "btw": "BE0862.762.837", "notitie": "", "onfactId": "187945", "volgnummer": "B00106"}, {"id": "onfact_32414", "naam": "BVBA MINDRIE", "contactpersoon": "", "email": "johanminten\u0040skynet.be", "telefoon": "", "adres": "GENERAAL DE WITTESTRAAT 14, 3545 HALEN", "btw": "BE0827947557", "notitie": "", "onfactId": "32414", "volgnummer": "B00107"}, {"id": "onfact_20697", "naam": "Comptoir optique Verviers", "contactpersoon": "", "email": "daniel.alfons\u0040vpharma.be", "telefoon": "087/334423", "adres": "Reu du Brou 44, 4800 Verviers", "btw": "BE0698.902.816", "notitie": "", "onfactId": "20697", "volgnummer": "B00108"}, {"id": "onfact_32450", "naam": "BVBA STAPPERS P.", "contactpersoon": "", "email": "info\u0040optiekstappers.be", "telefoon": "", "adres": "VEEMARKT 4-6, 2800 MECHELEN", "btw": "BE0462288538", "notitie": "", "onfactId": "32450", "volgnummer": "B00109"}, {"id": "onfact_23127", "naam": "Europtics (Lunetiq)", "contactpersoon": "", "email": "info\u0040lunetiq.be", "telefoon": "", "adres": "Kapelstraat 29, 3500 Hasselt", "btw": "BE0810834183", "notitie": "", "onfactId": "23127", "volgnummer": "B00111"}, {"id": "onfact_20097", "naam": "Vision Sprl", "contactpersoon": "", "email": "vision.plus.helmet\u0040gmail.com", "telefoon": "", "adres": "Chaussee De Helmet 245, 1030 Schaerbeek", "btw": "BE0475.371.462", "notitie": "", "onfactId": "20097", "volgnummer": "B00112"}, {"id": "onfact_187946", "naam": "BVBA OPTIEK MARK PAULY", "contactpersoon": "", "email": "", "telefoon": "012 45 48 49", "adres": "TONGERSESTEENWEG 157, 3770 RIEMST", "btw": "BE0455.714.809", "notitie": "", "onfactId": "187946", "volgnummer": "B00113"}, {"id": "onfact_187947", "naam": "OPTIEK SCHOOTEN", "contactpersoon": "", "email": "info\u0040schootenoptiek.be", "telefoon": "03/685.72.00", "adres": "PAALSTRAAT 84-86, 2900 SCHOTEN", "btw": "BE0479.512.174", "notitie": "", "onfactId": "187947", "volgnummer": "B00115"}, {"id": "onfact_187948", "naam": "SCRL POINT DE MIRE OPTIEK", "contactpersoon": "", "email": "nicola.pluymers\u0040mutsoc.be", "telefoon": "010/22 33 43", "adres": "CHAUSSÉE DE MONS 228, 1480 TUBIZE", "btw": "BE0456.403.806", "notitie": "", "onfactId": "187948", "volgnummer": "B00118"}, {"id": "onfact_32387", "naam": "SPRL ANNE DELTOUR OPTIQUE", "contactpersoon": "", "email": "optiqueberiaux\u0040skynet.be", "telefoon": "", "adres": "RUE DE LA STATION 31, 4880 AUBEL", "btw": "BE0422295438", "notitie": "", "onfactId": "32387", "volgnummer": "B00119"}, {"id": "onfact_32457", "naam": "DHR VAN UFFELEN, PETER", "contactpersoon": "", "email": "optiek.van.uffelen\u0040gmail.com", "telefoon": "", "adres": "DORPSSTRAAT 11, 3390 TIELT-WINGE", "btw": "BE0636456293", "notitie": "", "onfactId": "32457", "volgnummer": "B00120"}, {"id": "onfact_32396", "naam": "MVR CREEMERS, NICOLE", "contactpersoon": "", "email": "optiek.creemers\u0040scarlet.be", "telefoon": "", "adres": "KERKSTRAAT 31 0002, 3940 HECHTEL-EKSEL", "btw": "BE0705384295", "notitie": "", "onfactId": "32396", "volgnummer": "B00122"}, {"id": "onfact_32431", "naam": "Optiek Plessers BV", "contactpersoon": "", "email": "info\u0040optiek-plessers.be", "telefoon": "", "adres": "Kanaallaan 5, 3960 Bree", "btw": "BE0895215176", "notitie": "", "onfactId": "32431", "volgnummer": "B00123"}, {"id": "onfact_187950", "naam": "TROUSSART OPTIQUE", "contactpersoon": "", "email": "", "telefoon": "041266851", "adres": "RUE DES GLACIS 7, 4000 LIEGE", "btw": "", "notitie": "", "onfactId": "187950", "volgnummer": "C00126"}, {"id": "onfact_32411", "naam": "SPRLU MALH", "contactpersoon": "", "email": "marcoptic.malh\u0040euphonynet.be", "telefoon": "", "adres": "RUE DES COMBATTANTS 79, 1310 LA HULPE", "btw": "BE0478985703", "notitie": "", "onfactId": "32411", "volgnummer": "B00128"}, {"id": "onfact_187956", "naam": "OPTIQUE MEERT", "contactpersoon": "", "email": "", "telefoon": "063/41 18 68", "adres": "RUE DE L'EGLISE 15, 6724 MARBEHAN", "btw": "BE0695.077.848", "notitie": "", "onfactId": "187956", "volgnummer": "B00130"}, {"id": "onfact_204801", "naam": "Optiek Hendriks", "contactpersoon": "", "email": "info\u0040hendriksoptiek.nl", "telefoon": "0031313651383", "adres": "Stuijvenburchstraat 119, 6961CV Eerbeek", "btw": "NL001589389B65", "notitie": "", "onfactId": "204801", "volgnummer": "B00132"}, {"id": "onfact_22452", "naam": "SPRL MAISON MAGIS", "contactpersoon": "", "email": "maison.magis\u0040skynet.be", "telefoon": "", "adres": "RUE SAUVENIÉRE 13, 4590 OUFFET", "btw": "BE0472487394", "notitie": "", "onfactId": "22452", "volgnummer": "B00134"}, {"id": "onfact_187957", "naam": "OPTIEK VAN RENTERGHEM", "contactpersoon": "", "email": "", "telefoon": "09/374.74.94", "adres": "LOSTRAAT 51, 9880 AALTER", "btw": "BE0531.939.387", "notitie": "", "onfactId": "187957", "volgnummer": "B00136"}, {"id": "onfact_30616", "naam": "De Vel Optiek", "contactpersoon": "", "email": "paul\u0040optiekdevel.be", "telefoon": "+32 14 21 77 28", "adres": "Retiesebaan 12, 2460 Kasterlee", "btw": "BE 0882.991.196", "notitie": "", "onfactId": "30616", "volgnummer": "B00144"}, {"id": "onfact_19434", "naam": "Oog En Oor Coenen BV", "contactpersoon": "", "email": "info\u0040oogenoor.be", "telefoon": "", "adres": "Steenweg 118/2, 3570 Alken", "btw": "BE0477.362.041", "notitie": "", "onfactId": "19434", "volgnummer": "B00150"}, {"id": "onfact_20335", "naam": "Optiek MERCIER NICOLE", "contactpersoon": "", "email": "janscheunders\u0040skynet.be", "telefoon": "", "adres": "Markt 21, 2450 Meerhout", "btw": "BE0728.254.224", "notitie": "", "onfactId": "20335", "volgnummer": "B00153"}, {"id": "onfact_32458", "naam": "EBVBA VISUEEL CENTRUM", "contactpersoon": "", "email": "info\u0040visueelcentrum.be", "telefoon": "", "adres": "PLEZANTSTRAAT 42, 9100 SINT-NIKLAAS", "btw": "BE0459690720", "notitie": "", "onfactId": "32458", "volgnummer": "B00154"}, {"id": "onfact_187960", "naam": "OPTIEK BROUNS", "contactpersoon": "", "email": "", "telefoon": "089/35 24 34", "adres": "MOLENSTRAAT 14, 3600 GENK", "btw": "", "notitie": "", "onfactId": "187960", "volgnummer": "C00161"}, {"id": "onfact_19257", "naam": "CV Optico (Genk)", "contactpersoon": "", "email": "katrien.beerens\u0040scherpesteen.be", "telefoon": "", "adres": "Gildelaan 42, 3600 Genk", "btw": "BE0475.153.807", "notitie": "", "onfactId": "19257", "volgnummer": "B00167"}, {"id": "onfact_32403", "naam": "SPRL EUROPTICAL", "contactpersoon": "", "email": "europtical\u0040skynet.be", "telefoon": "", "adres": "CHAUSSÉE DE LOUVAIN 499, 1030 SCHAERBEEK", "btw": "BE0823839707", "notitie": "", "onfactId": "32403", "volgnummer": "B00168"}, {"id": "onfact_32452", "naam": "BVBA TREND OPTICAL", "contactpersoon": "", "email": "info\u0040trendoptical.be", "telefoon": "", "adres": "MEERMINSTRAAT 23, 9500 GERAARDSBERGEN", "btw": "BE0462756217", "notitie": "", "onfactId": "32452", "volgnummer": "B00170"}, {"id": "onfact_32459", "naam": "CVBA VIVANTIA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "KONING LEOPOLD I-STRAAT 34, 3000 LEUVEN", "btw": "BE0462158775", "notitie": "", "onfactId": "32459", "volgnummer": "B00171"}, {"id": "onfact_32433", "naam": "BVBA OPTIEK MANU ROBEYNS", "contactpersoon": "", "email": "optieksilhouetteretie\u0040euphonynet.be", "telefoon": "", "adres": "MARKT 13, 2480 DESSEL", "btw": "BE0824983416", "notitie": "", "onfactId": "32433", "volgnummer": "B00173"}, {"id": "onfact_32446", "naam": "SPRL OPTISOL", "contactpersoon": "", "email": "info\u0040milloptics.be", "telefoon": "", "adres": "Rue Des Vallees 11, 1320 Beauvechain", "btw": "BE0810542589", "notitie": "", "onfactId": "32446", "volgnummer": "B00174"}, {"id": "onfact_32442", "naam": "BVBA OPTIKON PHILIPPE TREUNEN", "contactpersoon": "", "email": "optikon\u0040skynet.be", "telefoon": "", "adres": "ZOUTBRUGSTRAAT 35, 3540 HERK-DE-STAD", "btw": "BE0875319783", "notitie": "", "onfactId": "32442", "volgnummer": "B00175"}, {"id": "onfact_19532", "naam": "Optiek Rodermond", "contactpersoon": "", "email": "info\u0040rodermondoptiek.nl", "telefoon": "", "adres": "Voorheuvel 66, 3701 JG Zeist", "btw": "NL810883028B01", "notitie": "", "onfactId": "19532", "volgnummer": "B00176"}, {"id": "onfact_19531", "naam": "Borghs Els Bvba", "contactpersoon": "", "email": "info\u0040els-optics.be", "telefoon": "", "adres": "Vital Decosterstraat 28/000 A, 3000 Leuven", "btw": "BE0825.810.983", "notitie": "", "onfactId": "19531", "volgnummer": "B00177"}, {"id": "onfact_32443", "naam": "NV OPTINVEST", "contactpersoon": "", "email": "ivov\u0040optinvest.be", "telefoon": "", "adres": "GRIJPENLAAN 25, 3300 TIENEN", "btw": "BE0429546979", "notitie": "", "onfactId": "32443", "volgnummer": "B00180"}, {"id": "onfact_27136", "naam": "Specsavers Huizen bv", "contactpersoon": "", "email": "dir.huizen\u0040st.nl.specsavers.com", "telefoon": "", "adres": "Kerkstraat 56, 1273 CV Huizen", "btw": "NL808449710B01", "notitie": "", "onfactId": "27136", "volgnummer": "B00187"}, {"id": "onfact_32409", "naam": "NV M & M", "contactpersoon": "", "email": "sabine\u0040mnmoptix.com", "telefoon": "", "adres": "KORTRIJKSESTEENWEG 127, 9830 SINT-MARTENS-LATEM", "btw": "BE0455793991", "notitie": "", "onfactId": "32409", "volgnummer": "B00188"}, {"id": "onfact_32392", "naam": "BRIL EN ZO", "contactpersoon": "", "email": "info\u0040brilenzo.nl", "telefoon": "", "adres": "BREMLAAN 00006, 5271KG SINT-MICHIELSGESTEL", "btw": "NL148530084B01", "notitie": "", "onfactId": "32392", "volgnummer": "B00189"}, {"id": "onfact_22674", "naam": "STOOT OPTIEK NV", "contactpersoon": "", "email": "jan\u0040somersoptiek.be", "telefoon": "034402132", "adres": "Prins Boudewijnlaan 363, 2650 Edegem", "btw": "BE0446809912", "notitie": "", "onfactId": "22674", "volgnummer": "B00190"}, {"id": "onfact_187964", "naam": "BVBA OPTIEK LANNOO", "contactpersoon": "", "email": "info\u0040optieklannoo.be", "telefoon": "050 38 41 12", "adres": "GISTELSE STEENWEG 303, 8200 BRUGGE", "btw": "BE0810.498.544", "notitie": "", "onfactId": "187964", "volgnummer": "B00191"}, {"id": "onfact_187977", "naam": "OPTIX", "contactpersoon": "", "email": "optixwemmel\u0040skynet.be", "telefoon": "", "adres": "STEENWEG OP BRUSSEL 17, 1780 WEMMEL", "btw": "", "notitie": "", "onfactId": "187977", "volgnummer": "C00193"}, {"id": "onfact_19375", "naam": "Optiek Paternoster", "contactpersoon": "", "email": "optiek.paternoster\u0040skynet.be", "telefoon": "", "adres": "Bergensesteenweg 245 bus1, 1600 Sint-Pieters-Leeuw", "btw": "BE0747.088.159", "notitie": "", "onfactId": "19375", "volgnummer": "B00194"}, {"id": "onfact_187978", "naam": "OPTIEK FOUBERT", "contactpersoon": "", "email": "optiek_foubert\u0040hotmail.com", "telefoon": "03 774 16 18", "adres": "O.L.VROUWPLEIN 15/0001, 9150 KRUIBEKE", "btw": "BE0684.081.414", "notitie": "", "onfactId": "187978", "volgnummer": "B00195"}, {"id": "onfact_187965", "naam": "BVBA BVBA OPTIEK DECRAENE", "contactpersoon": "", "email": "info\u0040optiekdecraene.be", "telefoon": "056/214352", "adres": "DOORNIKSERIJKSWEG(BEL) 155/A, 8510 KORTRIJK", "btw": "BE0871.091.771", "notitie": "", "onfactId": "187965", "volgnummer": "B00198"}, {"id": "onfact_32439", "naam": "BVBA OPTIEK VERHOEVEN", "contactpersoon": "", "email": "info\u0040optiekverhoeven.be", "telefoon": "", "adres": "KONING LEOPOLDLAAN 82, 3920 LOMMEL", "btw": "BE0878637282", "notitie": "", "onfactId": "32439", "volgnummer": "B00201"}, {"id": "onfact_188017", "naam": "SPRL OPTICIENS DIEU", "contactpersoon": "", "email": "opticiensdieu\u0040skynet.be", "telefoon": "081 220618", "adres": "RUE SAINT-JACQUES 27, 5000 NAMUR", "btw": "BE0415.990.438", "notitie": "", "onfactId": "188017", "volgnummer": "B00204"}, {"id": "onfact_188018", "naam": "SPRL OPTICIENS DIEU", "contactpersoon": "", "email": "opticiensdieu\u0040skynet.be", "telefoon": "081 220618", "adres": "RUE SAINT-JACQUES 27, 5000 NAMUR", "btw": "BE0415.990.438", "notitie": "", "onfactId": "188018", "volgnummer": "B00204"}, {"id": "onfact_189473", "naam": "Optiek Mattot", "contactpersoon": "", "email": "mattotoptiek\u0040telenet.be", "telefoon": "", "adres": "Maandagmarkt 9, 1500 Halle", "btw": "BE0895.023.453", "notitie": "", "onfactId": "189473", "volgnummer": "B00206"}, {"id": "onfact_32416", "naam": "BVBA OPTIC 2009", "contactpersoon": "", "email": "info\u0040vizi-turnhout.be", "telefoon": "", "adres": "DE MERODELEI 12, 2300 TURNHOUT", "btw": "BE0874545763", "notitie": "", "onfactId": "32416", "volgnummer": "B00207"}, {"id": "onfact_189474", "naam": "I-care (BVBA EGOS)", "contactpersoon": "", "email": "egos\u0040skynet.be", "telefoon": "", "adres": "Basiliekstraat 38, 1500 HALLE", "btw": "BE0434.553.664", "notitie": "", "onfactId": "189474", "volgnummer": "B00208"}, {"id": "onfact_20349", "naam": "Franssen BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Demerstraat 51, 3500 Hasselt", "btw": "BE0415.755.361", "notitie": "", "onfactId": "20349", "volgnummer": "B00212"}, {"id": "onfact_189476", "naam": "Du coen de L'oeil", "contactpersoon": "", "email": "coindeloeil\u0040skynet.be", "telefoon": "", "adres": "Rue Mitoyenne 139, 4840 Welkenraedt", "btw": "BE0774.249.941", "notitie": "", "onfactId": "189476", "volgnummer": "B00213"}, {"id": "onfact_23305", "naam": "PGmbH BRILLE KOONEN EUPEN", "contactpersoon": "", "email": "info\u0040brillekoonen.be", "telefoon": "", "adres": "Gospert 75, 4700 EUPEN", "btw": "BE0561959404", "notitie": "", "onfactId": "23305", "volgnummer": "B00215"}, {"id": "onfact_32424", "naam": "MVR FRANSSENS, MYRIAM (Optiek Franssens)", "contactpersoon": "", "email": "optiek.franssens\u0040telenet.be", "telefoon": "", "adres": "HERENTALSEBAAN 340, 2100 ANTWERPEN", "btw": "BE0700084632", "notitie": "", "onfactId": "32424", "volgnummer": "B00222"}, {"id": "onfact_19035", "naam": "Optique Furnal Sprl", "contactpersoon": "", "email": "furnaloptique\u0040hotmail.com", "telefoon": "071315651", "adres": "Boulevard Tirou 131, 6000 Charleroi", "btw": "BE0431.344.548", "notitie": "", "onfactId": "19035", "volgnummer": "B00224"}, {"id": "onfact_19376", "naam": "Daan Optiek", "contactpersoon": "", "email": "info\u0040daanoptiek.be", "telefoon": "", "adres": "Paradijsstraat(NDW) 1A, 2200 Herentals", "btw": "BE0508.471.822", "notitie": "", "onfactId": "19376", "volgnummer": "B00225"}, {"id": "onfact_189477", "naam": "Hons Optiek", "contactpersoon": "", "email": "info\u0040optiekhons.be", "telefoon": "", "adres": "Europalaan 73/3, 3650 Dilsen-Stokkem", "btw": "BE0818.973.176", "notitie": "", "onfactId": "189477", "volgnummer": "B00226"}, {"id": "onfact_30615", "naam": "Opticien Peter Bronzwaer", "contactpersoon": "", "email": "info\u0040peterbronzwaeropticien.com", "telefoon": "+31 43 3250111", "adres": "Hoogbrugstraat 61, 6221 CP Maastricht", "btw": "NL808882041", "notitie": "", "onfactId": "30615", "volgnummer": "B00227"}, {"id": "onfact_19373", "naam": "Alexanian", "contactpersoon": "", "email": "info\u0040alexanian.nl", "telefoon": "", "adres": "Hertogstraat 6, 6006 BD Weert", "btw": "NL243080190B01", "notitie": "", "onfactId": "19373", "volgnummer": "B00230"}, {"id": "onfact_189478", "naam": "BVBA Optiek VAN DER LINDEN", "contactpersoon": "", "email": "philip\u0040optiekvanderlinden.be", "telefoon": "", "adres": "MARKT 60, 9240 ZELE", "btw": "BE0880.397.932", "notitie": "", "onfactId": "189478", "volgnummer": "B00231"}, {"id": "onfact_189479", "naam": "BVBA M. VAN BOSSELE-OPTICIÉN OPTOMETRIST", "contactpersoon": "", "email": "m.vanbossele\u0040vanbossele.be", "telefoon": "", "adres": "Hoeksken 66, 9940 Evergem", "btw": "BE0808.466.096", "notitie": "", "onfactId": "189479", "volgnummer": "B00232"}, {"id": "onfact_20783", "naam": "Spaenjers Kitty", "contactpersoon": "", "email": "info\u0040pauwelsspaenjers.eu", "telefoon": "", "adres": "Maastrichterstraat 64, 3500 Hasselt", "btw": "BE0699267456", "notitie": "", "onfactId": "20783", "volgnummer": "B00236"}, {"id": "onfact_189480", "naam": "Comptoir Optique Spa", "contactpersoon": "", "email": "optique-spa\u0040vpharma.be", "telefoon": "", "adres": "Rue de la Poste 9, 4900 Spa", "btw": "BE0402307894", "notitie": "", "onfactId": "189480", "volgnummer": "B00240"}, {"id": "onfact_20064", "naam": "Optiek Depauw BV", "contactpersoon": "", "email": "optiekdepauw\u0040online.be", "telefoon": "", "adres": "Kapelsesteenweg 565, 2180 Antwerpen", "btw": "BE0473.680.395", "notitie": "", "onfactId": "20064", "volgnummer": "B00241"}, {"id": "onfact_189482", "naam": "BVBA OPTIEK GOOVAERTS", "contactpersoon": "", "email": "info\u0040optiekgoovaerts.be", "telefoon": "", "adres": "LEEUWLANTSTRAAT 22, 2100 ANTWERPEN", "btw": "BE0420.268.732", "notitie": "", "onfactId": "189482", "volgnummer": "B00243"}, {"id": "onfact_189481", "naam": "Comptoir Optique Malmedy", "contactpersoon": "", "email": "optique-malmedy\u0040vpharma.be", "telefoon": "", "adres": "Avenue des Alliés 104, 4960 Malmedy", "btw": "BE0402307894", "notitie": "", "onfactId": "189481", "volgnummer": "B00244"}, {"id": "onfact_20350", "naam": "Eddy Heleven Juweliers (Hasselt)", "contactpersoon": "", "email": "info\u0040heleven.com", "telefoon": "", "adres": "Kloosterstraat 5, 3590 Diepenbeek", "btw": "BE0480.096.550", "notitie": "", "onfactId": "20350", "volgnummer": "B00246"}, {"id": "onfact_189484", "naam": "De Vos Optiek bvba", "contactpersoon": "", "email": "devos.optiek\u0040belgacom.net", "telefoon": "", "adres": "Alfons Pieterslaan 74, 8400 Oostende", "btw": "BE0422.129.152", "notitie": "", "onfactId": "189484", "volgnummer": "B00247"}, {"id": "onfact_32404", "naam": "NV EYE CANDY", "contactpersoon": "", "email": "bart\u0040eyecandy.be", "telefoon": "", "adres": "Pelgrimstraat 1A, 3000 LEUVEN", "btw": "BE0837504037", "notitie": "", "onfactId": "32404", "volgnummer": "B00249"}, {"id": "onfact_20866", "naam": "SPRL DROSSON BHO", "contactpersoon": "", "email": "jost\u0040drosson.net", "telefoon": "", "adres": "Chemin-Rue 19, 4960 MALMEDY", "btw": "BE0839464922", "notitie": "", "onfactId": "20866", "volgnummer": "B00250"}, {"id": "onfact_189486", "naam": "BVBA GOOD LOOK Optiek", "contactpersoon": "", "email": "info\u0040goodlookoptiek.be", "telefoon": "", "adres": "ALBERT I LAAN 247/201, 8620 NIEUWPOORT", "btw": "BE0862.342.371", "notitie": "", "onfactId": "189486", "volgnummer": "B00251"}, {"id": "onfact_189487", "naam": "BVBA OPTIEK DEMEESTER", "contactpersoon": "", "email": "info\u0040optiekdemeester.be", "telefoon": "", "adres": "MARKT 45, 9900 EEKLO", "btw": "BE0443.488.156", "notitie": "", "onfactId": "189487", "volgnummer": "B00252"}, {"id": "onfact_32440", "naam": "BVBA OPTIEKPUNT", "contactpersoon": "", "email": "alex\u0040optiekpunt.be", "telefoon": "051253725", "adres": "JAN MAHIEUSTRAAT 28 A, 8800 ROESELARE", "btw": "BE0837709618", "notitie": "", "onfactId": "32440", "volgnummer": "B00253"}, {"id": "onfact_32441", "naam": "PGmbH OPTIK WILLEMS", "contactpersoon": "", "email": "", "telefoon": "", "adres": "BERGSTRASSE 4, 4700 EUPEN", "btw": "BE0434044217", "notitie": "", "onfactId": "32441", "volgnummer": "B00258"}, {"id": "onfact_32389", "naam": "BVBA BEMINOR", "contactpersoon": "", "email": "info\u0040beminor.be", "telefoon": "", "adres": "DE SCHIERVELLAAN 28/7, 3500 HASSELT", "btw": "BE0824932837", "notitie": "", "onfactId": "32389", "volgnummer": "B00261"}, {"id": "onfact_20334", "naam": "Somers Sofie Bvba", "contactpersoon": "", "email": "info\u0040optieksomerswolvertem.be", "telefoon": "", "adres": "Gemeenteplein 20, 1861 Wolvertem", "btw": "BE0878.049.146", "notitie": "", "onfactId": "20334", "volgnummer": "B00262"}, {"id": "onfact_32407", "naam": "BVBA JAN PYCK OPTICIEN", "contactpersoon": "", "email": "info\u0040optiekpyck.be", "telefoon": "", "adres": "GROENDALSTRAAT 7, 2000 ANTWERPEN", "btw": "BE0414513860", "notitie": "", "onfactId": "32407", "volgnummer": "B00263"}, {"id": "onfact_32397", "naam": "FISCALE EENHEID DAMME BEHEER B.V. EN DAMME OPTIEK B.V.", "contactpersoon": "", "email": "info\u0040damme.nl", "telefoon": "", "adres": "HOOFDSTRAAT 00028, 4041AD KESTEREN", "btw": "NL801851968B01", "notitie": "", "onfactId": "32397", "volgnummer": "B00264"}, {"id": "onfact_22167", "naam": "BVBA OPTIEK KNIPOOG WEELDE", "contactpersoon": "", "email": "info\u0040optiekknipoog.be", "telefoon": "014/651727", "adres": "WEELDESTRAAT 74, 2381 Weelde", "btw": "BE0456063118", "notitie": "", "onfactId": "22167", "volgnummer": "B00265"}, {"id": "onfact_20333", "naam": "D'Awans Optique SRL", "contactpersoon": "", "email": "dawansoptique\u0040gmail.com", "telefoon": "04/336 15 18", "adres": "Place Merlot 2, 4100 Seraing", "btw": "BE0740679528", "notitie": "", "onfactId": "20333", "volgnummer": "B00269"}, {"id": "onfact_32415", "naam": "SA N. BAURENS", "contactpersoon": "", "email": "optique.baurens\u0040skynet.be", "telefoon": "", "adres": "Outre-Cour 26, 4651 Liège", "btw": "BE0436949168", "notitie": "", "onfactId": "32415", "volgnummer": "B00270"}, {"id": "onfact_32456", "naam": "DHR VAN ROOST, PIETER (Optiek Van Roost)", "contactpersoon": "", "email": "pieter.van.roost\u0040telenet.be", "telefoon": "", "adres": "AARSCHOTSESTEENWEG 6, 3110 ROTSELAAR", "btw": "BE0708655472", "notitie": "", "onfactId": "32456", "volgnummer": "B00271"}, {"id": "onfact_32417", "naam": "BVBA OPTIC CENTER VERHAMME", "contactpersoon": "", "email": "info\u0040optiekverhamme.be", "telefoon": "", "adres": "STATIONSSTRAAT 62, 8790 WAREGEM", "btw": "BE0431135405", "notitie": "", "onfactId": "32417", "volgnummer": "B00272"}, {"id": "onfact_32394", "naam": "Optiek Carine", "contactpersoon": "", "email": "optiekcarine\u0040skynet.be", "telefoon": "", "adres": "Kerkstraat 4, 8720 Dentergem", "btw": "BE0817353177", "notitie": "", "onfactId": "32394", "volgnummer": "B00274"}, {"id": "onfact_50820", "naam": "Opticien aan huis (Bakel)", "contactpersoon": "", "email": "manuel\u0040opticienaanhuis.com", "telefoon": "0031629119975", "adres": "NIEUWE UITLEG 00055, 5761EC BAKEL", "btw": "NL125639648B01", "notitie": "", "onfactId": "50820", "volgnummer": "B00275"}, {"id": "onfact_19358", "naam": "De Brilstudio  De Brilboutique BV", "contactpersoon": "", "email": "gythe\u0040debrilstudio.be", "telefoon": "", "adres": "Diestersteenweg 183, 3510 Hasselt", "btw": "BE1004154292", "notitie": "", "onfactId": "19358", "volgnummer": "B00276"}, {"id": "onfact_32430", "naam": "MR INGELBEEN, HANS (Optiek Overleie)", "contactpersoon": "", "email": "", "telefoon": "", "adres": "OVERLEIESTRAAT(KOR) 63, 8500 KORTRIJK", "btw": "BE0525402973", "notitie": "", "onfactId": "32430", "volgnummer": "B00278"}, {"id": "onfact_24371", "naam": "B&h Audioptic", "contactpersoon": "", "email": "info\u0040audioptic.be", "telefoon": "022670448", "adres": "Rue De Wand 116, 1020 Bruxelles", "btw": "BE0727.883.842", "notitie": "", "onfactId": "24371", "volgnummer": "B00279"}, {"id": "onfact_32390", "naam": "BERRY NABER OPTICIENS OPTOMETRISTEN AUDICIENS B.V.", "contactpersoon": "", "email": "mail\u0040berrynaberopticiens.nl", "telefoon": "", "adres": "HEYHOEFPROMENADE 00018, 5043RM TILBURG", "btw": "NL819442537B01", "notitie": "", "onfactId": "32390", "volgnummer": "B00280"}, {"id": "onfact_32405", "naam": "VOF FREDERIC VAN LINDT", "contactpersoon": "", "email": "info\u0040optiekvanlindt.be", "telefoon": "", "adres": "BEAUDUINSTRAAT 24, 3300 TIENEN", "btw": "BE0898310664", "notitie": "", "onfactId": "32405", "volgnummer": "B00282"}, {"id": "onfact_32399", "naam": "V.O.F. DE GOUDEN BRIL", "contactpersoon": "", "email": "info\u0040degoudenbril.nl", "telefoon": "", "adres": "RUMPENERSTRAAT 00029, 6443CB BRUNSSUM", "btw": "NL800486729B01", "notitie": "", "onfactId": "32399", "volgnummer": "B00283"}, {"id": "onfact_32436", "naam": "BVBA OPTIEK VAN DE KEERE RUDY", "contactpersoon": "", "email": "", "telefoon": "", "adres": "STATIONSSTRAAT 18, 9620 ZOTTEGEM", "btw": "BE0881576085", "notitie": "", "onfactId": "32436", "volgnummer": "B00286"}, {"id": "onfact_24154", "naam": "Srl Optique Peeters", "contactpersoon": "", "email": "info\u0040optique-peeters.com", "telefoon": "024267771", "adres": "Rue Marie-Christine 114, 1020 Bruxelles", "btw": "BE0866200892", "notitie": "", "onfactId": "24154", "volgnummer": "B00287"}, {"id": "onfact_32398", "naam": "DHR DAUW, HENK", "contactpersoon": "", "email": "", "telefoon": "", "adres": "VICHTEPLAATS 1, 8570 ANZEGEM", "btw": "BE0678083646", "notitie": "", "onfactId": "32398", "volgnummer": "B00288"}, {"id": "onfact_32408", "naam": "BVBA JOSEPH VAN MOLL HOLDING", "contactpersoon": "", "email": "", "telefoon": "", "adres": "TURNHOUTSEBAAN 289, 2400 MOL", "btw": "BE0876248807", "notitie": "", "onfactId": "32408", "volgnummer": "B00289"}, {"id": "onfact_32445", "naam": "MR MATHIEU, FRÉDÉRIC (Optique Mathieu-Plateus)", "contactpersoon": "", "email": "fred.mathieu\u0040skynet.be", "telefoon": "", "adres": "RUE GRÉTRY 111, 4020 LIÉGE", "btw": "BE0599517309", "notitie": "", "onfactId": "32445", "volgnummer": "B00290"}, {"id": "onfact_32428", "naam": "MR LEMAIRE, JOHAN (Optiek Lemaire)", "contactpersoon": "", "email": "torhout\u0040optieklemaire.be", "telefoon": "", "adres": "GRUYAERTSHOF 10, 8800 ROESELARE", "btw": "BE0530967112", "notitie": "", "onfactId": "32428", "volgnummer": "B00291"}, {"id": "onfact_32453", "naam": "MR VAN BELLEGHEM, DIRK (Optiek Van Belleghem)", "contactpersoon": "", "email": "optiek.dirkvanbelleghem\u0040euphonynet.be", "telefoon": "", "adres": "JAN DE GROOFSTRAAT 0003, 2610 ANTWERPEN", "btw": "BE0768114690", "notitie": "", "onfactId": "32453", "volgnummer": "B00292"}, {"id": "onfact_21186", "naam": "Fontaine Optique", "contactpersoon": "", "email": "benoitfontaine4\u0040hotmail.com", "telefoon": "06046531", "adres": "Rue De La Ravalagne 2, 5660 Couvin", "btw": "BE0658.345.136", "notitie": "", "onfactId": "21186", "volgnummer": "B00294"}, {"id": "onfact_32418", "naam": "BVBA OPTIEK - JUWELEN LEHOUCQ", "contactpersoon": "", "email": "", "telefoon": "", "adres": "WESTSTRAAT 8, 9940 EVERGEM", "btw": "BE0831951479", "notitie": "", "onfactId": "32418", "volgnummer": "B00295"}, {"id": "onfact_32391", "naam": "BVBA BERT BRIL", "contactpersoon": "", "email": "", "telefoon": "", "adres": "HOOGSTRAAT 48, 2000 ANTWERPEN", "btw": "BE0808719484", "notitie": "", "onfactId": "32391", "volgnummer": "B00296"}, {"id": "onfact_19189", "naam": "Optiek Huygen BV", "contactpersoon": "", "email": "guido.huygen\u0040skynet.be", "telefoon": "", "adres": "Pauwengraaf 121, 3630 Maasmechelen", "btw": "BE0447.651.436", "notitie": "", "onfactId": "19189", "volgnummer": "B00297"}, {"id": "onfact_32422", "naam": "EBVBA OPTIEK DE FERM", "contactpersoon": "", "email": "", "telefoon": "", "adres": "KAPELSESTEENWEG 388, 2930 BRASSCHAAT", "btw": "BE0439725051", "notitie": "", "onfactId": "32422", "volgnummer": "B00298"}, {"id": "onfact_32410", "naam": "EBVBA M.G. OPTICS", "contactpersoon": "", "email": "info\u0040mgoptics.be", "telefoon": "", "adres": "DORPSSTRAAT(LUB) 19, 3210 LUBBEEK", "btw": "BE0476646221", "notitie": "", "onfactId": "32410", "volgnummer": "B00299"}, {"id": "onfact_32400", "naam": "NV ECLYPSE", "contactpersoon": "", "email": "mail\u0040eclypse.be", "telefoon": "", "adres": "LUMMENSEWEG 2, 3580 BERINGEN", "btw": "BE0444333541", "notitie": "", "onfactId": "32400", "volgnummer": "B00305"}, {"id": "onfact_20348", "naam": "Beuten Eric Option BV (Optiek Design Barbara)", "contactpersoon": "", "email": "info\u0040o-d-b.be", "telefoon": "", "adres": "Rijksweg(L) 263/A1, 3630 Maasmechelen", "btw": "BE0447.976.385", "notitie": "", "onfactId": "20348", "volgnummer": "B00306"}, {"id": "onfact_32427", "naam": "BVBA OPTIEK KATRIEN", "contactpersoon": "", "email": "info\u0040optiekkatrien.be", "telefoon": "", "adres": "LEOPOLD II LAAN(ODK) 213/GV02, 8670 KOKSIJDE", "btw": "BE0824772984", "notitie": "", "onfactId": "32427", "volgnummer": "B00308"}, {"id": "onfact_22451", "naam": "Optique Lacheron", "contactpersoon": "", "email": "optiquelacheron\u0040gmail.com", "telefoon": "081322199", "adres": "Place des Jardins de Baseilles 1, 5101 Erpent", "btw": "BE0726350549", "notitie": "", "onfactId": "22451", "volgnummer": "B00309"}, {"id": "onfact_26875", "naam": "BVBA BECKERS ROLAND OPTIEK", "contactpersoon": "", "email": "roland.beckers\u0040pearleopticiens.be", "telefoon": "", "adres": "SPRINKELESTRAAT 59, 3690 ZUTENDAAL", "btw": "BE0502517705", "notitie": "", "onfactId": "26875", "volgnummer": "B00311"}, {"id": "onfact_32454", "naam": "MW VAN GOOL, NONA ('t Brilletje)", "contactpersoon": "", "email": "info\u0040brilletje.eu", "telefoon": "", "adres": "OUDELIJNS 11, 2381 RAVELS", "btw": "BE0878870775", "notitie": "", "onfactId": "32454", "volgnummer": "B00312"}, {"id": "onfact_32395", "naam": "BVBA CENTRUM BETER ZIEN", "contactpersoon": "", "email": "", "telefoon": "", "adres": "BACCHUSLAAN 19, 2600 ANTWERPEN", "btw": "BE0413839315", "notitie": "", "onfactId": "32395", "volgnummer": "B00313"}, {"id": "onfact_32448", "naam": "SPRL VISION ET PRECISION", "contactpersoon": "", "email": "vipre\u0040skynet.be", "telefoon": "", "adres": "CHAUSSÉE DE FLEURUS 101/A, 6041 CHARLEROI", "btw": "BE0447935013", "notitie": "", "onfactId": "32448", "volgnummer": "B00314"}, {"id": "onfact_32412", "naam": "MR MARTENS, LODE", "contactpersoon": "", "email": "info\u0040lodemartens.be", "telefoon": "", "adres": "GUIDO GEZELLESTRAAT 19, 3500 HASSELT", "btw": "BE0730509869", "notitie": "", "onfactId": "32412", "volgnummer": "B00322"}, {"id": "onfact_22429", "naam": "Medicotheek De Voorzorg  (Low Vision)", "contactpersoon": "", "email": "margo.forier\u0040devoorzorg.be", "telefoon": "", "adres": "Guffenslaan 48, 3500 Hasselt", "btw": "BE0543386971", "notitie": "", "onfactId": "22429", "volgnummer": "B00323"}, {"id": "onfact_32419", "naam": "MW LUMBEECK, ASTRID (Optiek Bloemendale)", "contactpersoon": "", "email": "info\u0040optiekbloemendale.be", "telefoon": "", "adres": "PARKSTRAAT 3, 8730 BEERNEM", "btw": "BE0673145851", "notitie": "", "onfactId": "32419", "volgnummer": "B00324"}, {"id": "onfact_32449", "naam": "NV SPINCEMAILLE", "contactpersoon": "", "email": "", "telefoon": "", "adres": "BONDGENOTENLAAN 68, 3000 LEUVEN", "btw": "BE0430155903", "notitie": "", "onfactId": "32449", "volgnummer": "B00325"}, {"id": "onfact_35029", "naam": "Elektro Hermans-Mullens NV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Grote Baan 3, 3530 Houthalen", "btw": "BE0429.390.888", "notitie": "", "onfactId": "35029", "volgnummer": "B00326"}, {"id": "onfact_35147", "naam": "Oogwereld België NV (Optiek Jo Van Kerckhoven)", "contactpersoon": "", "email": "factuur.oogwereldbelgie\u0040oogwereld.be", "telefoon": "011/542759", "adres": "Ten Bos 5, 9100 Sint-Niklaas", "btw": "BE0436684201", "notitie": "", "onfactId": "35147", "volgnummer": "B00327"}, {"id": "onfact_36751", "naam": "Optiek Meyers", "contactpersoon": "", "email": "jean\u0040optiekmeyers.be", "telefoon": "", "adres": "Munsterbilzenstraat 46, 3740 Munsterbilzen", "btw": "be0696.177.512", "notitie": "", "onfactId": "36751", "volgnummer": "B00328"}, {"id": "onfact_39010", "naam": "Europacentrum t.a.v. mevr. Arnols Hanne", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Europalaan 50, 3600 Genk", "btw": "be0537.500.061", "notitie": "", "onfactId": "39010", "volgnummer": "B00329"}, {"id": "onfact_40425", "naam": "Optiek Verhulst BVBA", "contactpersoon": "", "email": "optiekverhulst\u0040hotmail.com", "telefoon": "016/224256", "adres": "Tiensestraat 191, 3000 Leuven", "btw": "be0860.005.859", "notitie": "", "onfactId": "40425", "volgnummer": "B00330"}, {"id": "onfact_42008", "naam": "MR BANKEN, GERRY", "contactpersoon": "", "email": "", "telefoon": "", "adres": "ISABELLASTRAAT 52/0004, 3500 HASSELT", "btw": "BE0816692191", "notitie": "", "onfactId": "42008", "volgnummer": "B00331"}, {"id": "onfact_42160", "naam": "Optiek Ck BVBA", "contactpersoon": "", "email": "claes_krista\u0040hotmail.com", "telefoon": "0473/268277", "adres": "Weverstraat 30, 3941 Hechtel-Eksel", "btw": "BE0637.788.163", "notitie": "", "onfactId": "42160", "volgnummer": "B00332"}, {"id": "onfact_44893", "naam": "André Schruers", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Kuilberg 24, 3550 Heusden-Zolder", "btw": "be0637228929", "notitie": "", "onfactId": "44893", "volgnummer": "B00333"}, {"id": "onfact_44954", "naam": "Helsen Tailors BVBA 1", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Kapelstraat 15, Hasselt", "btw": "be0452.675.640", "notitie": "", "onfactId": "44954", "volgnummer": "B00334"}, {"id": "onfact_45063", "naam": "BVBA GGG", "contactpersoon": "", "email": "", "telefoon": "", "adres": "TERHULPSESTEENWEG 166, 1170 WATERMAAL-BOSVOORDE", "btw": "BE0476.546.548", "notitie": "", "onfactId": "45063", "volgnummer": "B00335"}, {"id": "onfact_45731", "naam": "Yourec Optiek", "contactpersoon": "", "email": "hello\u0040yourec.be", "telefoon": "032362959", "adres": "Gitschotellei 116, 2600 Berchem", "btw": "BE0652618077", "notitie": "", "onfactId": "45731", "volgnummer": "B00336"}, {"id": "onfact_49449", "naam": "ALICE EYEWEAR", "contactpersoon": "", "email": "info\u0040loftoptiek.com", "telefoon": "09/3914219", "adres": "HENEGOUWENSTRAAT 89, 9000 Gent", "btw": "BE0644.966.658", "notitie": "", "onfactId": "49449", "volgnummer": "B00337"}, {"id": "onfact_53381", "naam": "BVBA VANDENBALCK", "contactpersoon": "", "email": "info\u0040vandenbalck.be", "telefoon": "016/223683", "adres": "BONDGENOTENLAAN 57, 3000 LEUVEN", "btw": "BE0474103237", "notitie": "", "onfactId": "53381", "volgnummer": "B00338"}, {"id": "onfact_55247", "naam": "MR BAETEN, ACHILLES", "contactpersoon": "", "email": "achilles.baeten\u0040gmail.com", "telefoon": "0473671319", "adres": "LISPERSTRAAT 33, 2500 LIER", "btw": "BE0853895948", "notitie": "", "onfactId": "55247", "volgnummer": "B00339"}, {"id": "onfact_58555", "naam": "De Cock BV (Pearl Sint-Truiden)", "contactpersoon": "", "email": "alec.decock\u0040telenet.be", "telefoon": "0475/336699", "adres": "Dungelstraat 52, 3440 Zoutleeuw", "btw": "BE0478.148.038", "notitie": "", "onfactId": "58555", "volgnummer": "B00340"}, {"id": "onfact_59866", "naam": "SA ESSILOR BELGIUM", "contactpersoon": "", "email": "", "telefoon": "", "adres": "BOULEVARD INTERNATIONAL 55/H, 1070 ANDERLECHT", "btw": "BE0403.026.585", "notitie": "", "onfactId": "59866", "volgnummer": "B00341"}, {"id": "onfact_61962", "naam": "Vandecruys Optiek BV", "contactpersoon": "", "email": "info\u0040vandecruysoptiek.be", "telefoon": "0499/108712", "adres": "Meir 18 bus 4, 2430 Laakdal", "btw": "BE0664640634", "notitie": "", "onfactId": "61962", "volgnummer": "B00342"}, {"id": "onfact_64761", "naam": "BVBA OPTIEK JUMA", "contactpersoon": "", "email": "info\u0040optiekdewilde.be", "telefoon": "0032 59 23 50 25", "adres": "DRIFTWEG 15, 8420 DE HAAN", "btw": "BE0541.928.706", "notitie": "", "onfactId": "64761", "volgnummer": "B00343"}, {"id": "onfact_71661", "naam": "Vael Christine", "contactpersoon": "", "email": "vael.christine\u0040gmail.com", "telefoon": "037666823", "adres": "Passtraat 242, 9100 Sint-Niklaas", "btw": "", "notitie": "", "onfactId": "71661", "volgnummer": "C00344"}, {"id": "onfact_78785", "naam": "NV YONTEC", "contactpersoon": "", "email": "info\u0040yontec.be", "telefoon": "011604365", "adres": "HENDRIK VAN VELDEKESINGEL 150/91, 3500 HASSELT", "btw": "BE0842.796.079", "notitie": "", "onfactId": "78785", "volgnummer": "B00345"}, {"id": "onfact_78830", "naam": "Optiek Byvoet", "contactpersoon": "", "email": "vincent.byvoet\u0040pandora.be", "telefoon": "02 - 759.40.34", "adres": "LEUVENSESTEENWEG 228, 3070 KORTENBERG", "btw": "BE0733.115.211", "notitie": "", "onfactId": "78830", "volgnummer": "B00346"}, {"id": "onfact_79642", "naam": "BVBA GERRY BANKEN", "contactpersoon": "", "email": "", "telefoon": "", "adres": "ISABELLASTRAAT 52/4, 3500 HASSELT", "btw": "BE0668.593.185", "notitie": "", "onfactId": "79642", "volgnummer": "B00347"}, {"id": "onfact_81130", "naam": "SCS VANDEWEYER RENOV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "RUE DE LA VESDRE 55, 4032 LIÉGE", "btw": "BE0873.124.318", "notitie": "", "onfactId": "81130", "volgnummer": "B00348"}, {"id": "onfact_82396", "naam": "SA OPTICIENS JOSSA - MAISON HIRSCH", "contactpersoon": "", "email": "COMPTA\u0040JOSSA.be", "telefoon": "042/322747", "adres": "RUE DE LA CATHÉDRALE 104, 4000 LIÉGE", "btw": "BE0404.257.101", "notitie": "", "onfactId": "82396", "volgnummer": "B00349"}, {"id": "onfact_90211", "naam": "BVBA OPTIEK VAN DEN HOUTE", "contactpersoon": "", "email": "info\u0040optiek-vandenhoute.be", "telefoon": "02/2693955", "adres": "HOOGSTRAAT 11, 1861 MEISE", "btw": "BE0450.104.447", "notitie": "", "onfactId": "90211", "volgnummer": "B00350"}, {"id": "onfact_91523", "naam": "BVBA C.A.S.", "contactpersoon": "", "email": "", "telefoon": "", "adres": "DE LANGE BEEMDEN 33, 3550 HEUSDEN-ZOLDER", "btw": "BE0437.533.049", "notitie": "", "onfactId": "91523", "volgnummer": "B00351"}, {"id": "onfact_100127", "naam": "MVR VAN DE BROECK, ELKE", "contactpersoon": "", "email": "", "telefoon": "0496/366871", "adres": "HALDERTSTRAAT 22, 3390 TIELT-WINGE", "btw": "BE0636.714.631", "notitie": "", "onfactId": "100127", "volgnummer": "B00352"}, {"id": "onfact_101439", "naam": "Comm.V SERENDIP", "contactpersoon": "", "email": "wimvankets.01\u0040gmail.com", "telefoon": "0475/78.15.14", "adres": "HOGE HAAR 18, 2970 SCHILDE", "btw": "BE0650.616.711", "notitie": "", "onfactId": "101439", "volgnummer": "B00353"}, {"id": "onfact_102054", "naam": "MVR VLECKEN, PETRA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "MARKT 6 A1, 3680 MAASEIK", "btw": "BE0707.452.969", "notitie": "", "onfactId": "102054", "volgnummer": "B00354"}, {"id": "onfact_102055", "naam": "DHR LANTMEETERS, ANDRÉ", "contactpersoon": "", "email": "", "telefoon": "", "adres": "WIEKSTRAAT 102, 3600 GENK", "btw": "BE0638.397.184", "notitie": "", "onfactId": "102055", "volgnummer": "B00355"}, {"id": "onfact_103666", "naam": "Optiek Somers BVBA DESO OPTICS", "contactpersoon": "", "email": "info\u0040optieksomers.be", "telefoon": "056/256871", "adres": "LANGE STEENSTRAAT(KOR) 43, 8500 KORTRIJK", "btw": "BE0877.657.879", "notitie": "", "onfactId": "103666", "volgnummer": "B00357"}, {"id": "onfact_103678", "naam": "BVBA AT&P PROFESSIONAL SERVICES (Oogpunt De Moor)", "contactpersoon": "", "email": "tibot\u0040oogpuntdemoor.be", "telefoon": "", "adres": "PIERRE DE BELLEFROIDLAAN 37, 2400 MOL", "btw": "BE0831.896.348", "notitie": "", "onfactId": "103678", "volgnummer": "B00358"}, {"id": "onfact_103687", "naam": "Declerck BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Sint-Katarinalaan 9 bus 18, Hasselt", "btw": "BE0846.054.289", "notitie": "", "onfactId": "103687", "volgnummer": "B00359"}, {"id": "onfact_114987", "naam": "'t Brillenhuys BV", "contactpersoon": "", "email": "info\u0040brillenhuys.be", "telefoon": "011/341670", "adres": "Stationsstraat 44, 3970 Leopoldsburg", "btw": "BE0889.158.715", "notitie": "", "onfactId": "114987", "volgnummer": "B00360"}, {"id": "onfact_115241", "naam": "Maconit BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Heidestraat 57, 3550 Heusden-Zolder", "btw": "BE0842.626.132", "notitie": "", "onfactId": "115241", "volgnummer": "B00361"}, {"id": "onfact_134269", "naam": "NV DE CEUNYNCK & C°", "contactpersoon": "", "email": "info\u0040deceunynck.be", "telefoon": "", "adres": "KONTICHSESTEENWEG 36, 2630 AARTSELAAR", "btw": "BE0447982919", "notitie": "", "onfactId": "134269", "volgnummer": "B00362"}, {"id": "onfact_147867", "naam": "CVBA OPTIEKEN EN HOORCENTRA DE VOORZORG", "contactpersoon": "", "email": "genk\u0040brilbaar.be", "telefoon": "0475/368615", "adres": "GUFFENSLAAN 48, 3500 HASSELT", "btw": "BE0878045186", "notitie": "", "onfactId": "147867", "volgnummer": "B00363"}, {"id": "onfact_147973", "naam": "BVBA PIE OPTIEK", "contactpersoon": "", "email": "info\u0040pieoptiek.be", "telefoon": "013/312286", "adres": "LEUVENSESTEENWEG 109, 3290 DIEST", "btw": "BE0473816096", "notitie": "", "onfactId": "147973", "volgnummer": "B00364"}, {"id": "onfact_153714", "naam": "BVBA OPTIEK WIM VANBAEDEN", "contactpersoon": "", "email": "seth\u0040vanbaeden-optiek.be", "telefoon": "034/405577", "adres": "FLORALAAN 83, 2640 MORTSEL", "btw": "BE 0420.632.976", "notitie": "", "onfactId": "153714", "volgnummer": "B00365"}, {"id": "onfact_158046", "naam": "BrilCity (MR HACHOUM, EL HASSAN)", "contactpersoon": "", "email": "info\u0040brilcity.be", "telefoon": "089304050", "adres": "Winterslagstraat 23 bus 1, 3600 Genk", "btw": "BE0692.522.491", "notitie": "", "onfactId": "158046", "volgnummer": "B00366"}, {"id": "onfact_165071", "naam": "Wim Decavele", "contactpersoon": "", "email": "wim.decavele\u0040telenet.be", "telefoon": "", "adres": "Pater Omer Devosstraat 6, 8510 Kortrijk-Marke", "btw": "", "notitie": "", "onfactId": "165071", "volgnummer": "C00367"}, {"id": "onfact_174448", "naam": "SMS BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Bochtlaan 41-11, 3600 Genk", "btw": "877889095", "notitie": "", "onfactId": "174448", "volgnummer": "B00368"}, {"id": "onfact_174478", "naam": "BVBA GEBROEDERS LAFOSSE ALGEMENE INTERIEURAFWERKING", "contactpersoon": "", "email": "", "telefoon": "", "adres": "LUIKERSTEENWEG 685, 3500 HASSELT", "btw": "BE0821.693.334", "notitie": "", "onfactId": "174478", "volgnummer": "B00369"}, {"id": "onfact_175187", "naam": "BVBA ELEWAUT ORTHOPEDIE", "contactpersoon": "", "email": "", "telefoon": "", "adres": "GUFFENSLAAN 19, 3500 HASSELT", "btw": "BE0451347730", "notitie": "", "onfactId": "175187", "volgnummer": "B00370"}, {"id": "onfact_175189", "naam": "BVBA BISTRO BELGIQUE", "contactpersoon": "", "email": "", "telefoon": "", "adres": "GUIDO GEZELLESTRAAT 27, 3500 HASSELT", "btw": "BE0692724609", "notitie": "", "onfactId": "175189", "volgnummer": "B00371"}, {"id": "onfact_182157", "naam": "Parvus GCV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Plankeweidelaan 10, 3500 Hasselt", "btw": "BE 0700.469.266", "notitie": "", "onfactId": "182157", "volgnummer": "B00372"}, {"id": "onfact_185552", "naam": "Comm.V PMF PLEISTERWERKEN", "contactpersoon": "", "email": "", "telefoon": "", "adres": "KLEIN-MALSTRAAT 16, 3700 TONGEREN", "btw": "BE0827.022.097", "notitie": "", "onfactId": "185552", "volgnummer": "B00373"}, {"id": "onfact_187959", "naam": "COOL OPTIEK", "contactpersoon": "", "email": "", "telefoon": "", "adres": "SINT-MARKOENSTRAAT 33, 9032 WONDELGEM", "btw": "", "notitie": "", "onfactId": "187959", "volgnummer": "C00374"}, {"id": "onfact_189485", "naam": "BVBA OPTIEK DEVOS", "contactpersoon": "", "email": "info\u0040optiekdevos.be", "telefoon": "", "adres": "MARKT 25, 2440 GEEL", "btw": "BE 0423-945-428", "notitie": "", "onfactId": "189485", "volgnummer": "B00375"}, {"id": "onfact_189570", "naam": "BVBA VINSTERMIK", "contactpersoon": "", "email": "", "telefoon": "", "adres": "MAASTRICHTERSTEENWEG 182, 3500 HASSELT", "btw": "BE0676.642.603", "notitie": "", "onfactId": "189570", "volgnummer": "B00376"}, {"id": "onfact_192059", "naam": "BVBA Dokters Peeters-Lambrechts", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Luikersteenweg 256A, Hasselt", "btw": "BE0877.855.839", "notitie": "", "onfactId": "192059", "volgnummer": "B00377"}, {"id": "onfact_193662", "naam": "Arcus BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Maasstraat 67, 3640 Kinrooi", "btw": "BE0699.280.324", "notitie": "", "onfactId": "193662", "volgnummer": "B00378"}, {"id": "onfact_194371", "naam": "AG UHREN, SCHMUCK, OPTIK EDMOND JOST", "contactpersoon": "", "email": "kj\u0040schmuck-optik-jost.be", "telefoon": "080/647185", "adres": "HAUPTSTRASSE 6, 4760 BÉLLINGEN", "btw": "BE0454.486.273", "notitie": "", "onfactId": "194371", "volgnummer": "B00379"}, {"id": "onfact_195135", "naam": "BVBA MARCOVER", "contactpersoon": "", "email": "", "telefoon": "", "adres": "GROTE BAAN 171/B, 3530 HOUTHALEN-HELCHTEREN", "btw": "BE0457.894.933", "notitie": "", "onfactId": "195135", "volgnummer": "B00380"}, {"id": "onfact_196160", "naam": "DR.A.SCHURMANS-OOGARTS", "contactpersoon": "", "email": "", "telefoon": "", "adres": "STADSOMVAART 12, 3500 HASSELT", "btw": "BE0817.672.287", "notitie": "", "onfactId": "196160", "volgnummer": "B00381"}, {"id": "onfact_198930", "naam": "MR JACOBS, PATRICK JOZEF", "contactpersoon": "", "email": "", "telefoon": "", "adres": "SINT-KATARINAPLEIN 15/7, 3500 HASSELT", "btw": "BE0895.753.725", "notitie": "", "onfactId": "198930", "volgnummer": "B00382"}, {"id": "onfact_200881", "naam": "BVBA OPTIEK VAN DER VEKEN STEFAAN", "contactpersoon": "", "email": "putte\u0040optiekvanderveken.be", "telefoon": "015/653965", "adres": "SCHRIEKSEBAAN 33, 3120 TREMELO", "btw": "BE0860.879.354", "notitie": "", "onfactId": "200881", "volgnummer": "B00383"}, {"id": "onfact_204635", "naam": "Bonné", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Grasstraat 27, 3500 Hasselt", "btw": "BE0817711879", "notitie": "", "onfactId": "204635", "volgnummer": "B00384"}, {"id": "onfact_206761", "naam": "CLEARVISION", "contactpersoon": "", "email": "clearvisionopticien\u0040gmail.com", "telefoon": "02/7266298", "adres": "Leuvensesteenweg 829, 1140 Evere", "btw": "BE0678.510.743", "notitie": "", "onfactId": "206761", "volgnummer": "B00385"}, {"id": "onfact_210446", "naam": "MW LENS, AN", "contactpersoon": "", "email": "", "telefoon": "", "adres": "BLOEMELINGEN 14, 3550 HEUSDEN-ZOLDER", "btw": "BE0635.828.268", "notitie": "", "onfactId": "210446", "volgnummer": "B00386"}, {"id": "onfact_210855", "naam": "MR WOUTERS, NICOLAAS", "contactpersoon": "", "email": "", "telefoon": "", "adres": "SINT-KATARINAPLEIN 19/14, 3500 HASSELT", "btw": "BE0767.300.583", "notitie": "", "onfactId": "210855", "volgnummer": "B00387"}, {"id": "onfact_211700", "naam": "MW BIJNENS, MARIE", "contactpersoon": "", "email": "", "telefoon": "", "adres": "HOGEBERGSTRAAT 39, 3500 HASSELT", "btw": "BE0887.281.170", "notitie": "", "onfactId": "211700", "volgnummer": "B00388"}, {"id": "onfact_214095", "naam": "D'Vine (Looks and Vision)", "contactpersoon": "", "email": "", "telefoon": "011762432", "adres": "Pastoor Mevislaan 4, 3582 Koersel", "btw": "BE0880.693.088", "notitie": "", "onfactId": "214095", "volgnummer": "B00389"}, {"id": "onfact_261670", "naam": "David BV", "contactpersoon": "", "email": "boekhouding\u0040hoorservice.be", "telefoon": "", "adres": "Langstraat 21/B, 3830 Wellen", "btw": "BE0830.820.341", "notitie": "", "onfactId": "261670", "volgnummer": "B00390"}, {"id": "onfact_274237", "naam": "MW FREDERIX, LINN", "contactpersoon": "", "email": "", "telefoon": "", "adres": "ELF-NOVEMBERLAAN 10, 3500 HASSELT", "btw": "BE0654.924.402", "notitie": "", "onfactId": "274237", "volgnummer": "B00391"}, {"id": "onfact_284551", "naam": "BVBA ELYZIUM", "contactpersoon": "", "email": "", "telefoon": "", "adres": "WEIDESTRAAT 37, 3511 HASSELT", "btw": "BE0809.583.180", "notitie": "", "onfactId": "284551", "volgnummer": "B00392"}, {"id": "onfact_284596", "naam": "BVBA ELASTOFLEX", "contactpersoon": "", "email": "", "telefoon": "", "adres": "KURINGERSTEENWEG 525, 3511 HASSELT", "btw": "BE0447.198.308", "notitie": "", "onfactId": "284596", "volgnummer": "B00393"}, {"id": "onfact_296953", "naam": "DR. Dries Van Duffel BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Hoevenstraat 55, 3920 Lommel", "btw": "BE0700.946.546", "notitie": "", "onfactId": "296953", "volgnummer": "B00394"}, {"id": "onfact_300851", "naam": "BVBA OPTIEK POLLERS", "contactpersoon": "", "email": "info\u0040optiekpollers.be", "telefoon": "011/192325", "adres": "HEFVELDSTRAAT 44, 3500 HASSELT", "btw": "BE0688.817.388", "notitie": "", "onfactId": "300851", "volgnummer": "B00395"}, {"id": "onfact_304417", "naam": "MW DEBROUX, KAROLIEN", "contactpersoon": "", "email": "", "telefoon": "", "adres": "ALINE PIETERSSTRAAT 8, 3800 SINT-TRUIDEN", "btw": "BE0635.524.501", "notitie": "", "onfactId": "304417", "volgnummer": "B00396"}, {"id": "onfact_307311", "naam": "BVBA DE MUTSAERT", "contactpersoon": "", "email": "", "telefoon": "", "adres": "WERVIKSTRAAT 219, 8930 MENEN", "btw": "BE0417.689.918", "notitie": "", "onfactId": "307311", "volgnummer": "B00397"}, {"id": "onfact_310356", "naam": "Liya Optics BV", "contactpersoon": "", "email": "eyecare-opticians\u0040outlook.com", "telefoon": "02/4453415", "adres": "Leuvensestraat 21, 1800 Vilvoorde", "btw": "BE0744.904.273", "notitie": "", "onfactId": "310356", "volgnummer": "B00398"}, {"id": "onfact_319395", "naam": "CV RS Consulting", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Vuurkruisenlaan 12, 3500 Hasselt", "btw": "BE0442.952.676", "notitie": "", "onfactId": "319395", "volgnummer": "B00399"}, {"id": "onfact_320077", "naam": "BVBA dokter An Hulshagen", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Hollandsveldlaan 4C1, 3500 Hasselt", "btw": "BE0680.852.205", "notitie": "", "onfactId": "320077", "volgnummer": "B00400"}, {"id": "onfact_325738", "naam": "COBALT OPTICAL FRAMES", "contactpersoon": "", "email": "info\u0040cobaltoptical.com", "telefoon": "", "adres": "Trosstraat(HRT) 29/3, 2200 Herentals", "btw": "BE0449.197.991", "notitie": "", "onfactId": "325738", "volgnummer": "B00401"}, {"id": "onfact_329963", "naam": "NV THEATERCAFE", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Kunstlaan 5, 3500 Hasselt", "btw": "BE0862.285.458", "notitie": "", "onfactId": "329963", "volgnummer": "B00402"}, {"id": "onfact_338764", "naam": "BVBA Dr. Geert Vandenbosch", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Aardbruggenstraat 69, 3570 Alken", "btw": "", "notitie": "", "onfactId": "338764", "volgnummer": "C00403"}, {"id": "onfact_338768", "naam": "BVBA YECO", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Kiezelstraat 14, 3500 Hasselt", "btw": "BE0888.451.803", "notitie": "", "onfactId": "338768", "volgnummer": "B00404"}, {"id": "onfact_341246", "naam": "Abdelaziz Kandil", "contactpersoon": "", "email": "kandil_513\u0040hotmail.com", "telefoon": "", "adres": "Tulpenstraat 24, 2830 Willebroek", "btw": "", "notitie": "", "onfactId": "341246", "volgnummer": "C00405"}, {"id": "onfact_341441", "naam": "Govaers, Marieke", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Oeleinderheide 5, 3665 As", "btw": "BE0634.575.483", "notitie": "", "onfactId": "341441", "volgnummer": "B00406"}, {"id": "onfact_356683", "naam": "BVBA GARAGE DE BAETS", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Diepenbekerweg 20, 3500 Hasselt", "btw": "BE0479.735.868", "notitie": "", "onfactId": "356683", "volgnummer": "B00407"}, {"id": "onfact_373355", "naam": "BVBA EYE SOCIETY optiek Elsevier", "contactpersoon": "", "email": "chantalelsevier\u0040hotmail.com", "telefoon": "027367131", "adres": "Vlierkensstraat 46, 1800 Vilvoorde", "btw": "BE0841.948.320", "notitie": "", "onfactId": "373355", "volgnummer": "B00408"}, {"id": "onfact_373868", "naam": "BVBA AC CONSULT", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Sint-Truidersteenweg 119/3.01, 3500 Hasselt", "btw": "BE0544.409.629", "notitie": "", "onfactId": "373868", "volgnummer": "B00409"}, {"id": "onfact_378623", "naam": "BVBA Dokter Ingrid Reymen", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Luikersteenweg 232 bus 4, Hasselt", "btw": "BE0549.719.226", "notitie": "", "onfactId": "378623", "volgnummer": "B00410"}, {"id": "onfact_382844", "naam": "BVBA VICTUS", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Guido Gezellestraat 21, 3500 Hasselt", "btw": "BE0468.347.870", "notitie": "", "onfactId": "382844", "volgnummer": "B00411"}, {"id": "onfact_383125", "naam": "VOF DAGBLADHANDEL DENIS-COLLAS", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Kapelstraat 106, 3720 Kortessem", "btw": "BE0848.185.519", "notitie": "", "onfactId": "383125", "volgnummer": "B00412"}, {"id": "onfact_384768", "naam": "BRILLEN BIJ U THUIS", "contactpersoon": "", "email": "", "telefoon": "+316/55577424 Paul J", "adres": "PIKETBERG 00006, 5025HZ TILBURG", "btw": "NL001799279B33", "notitie": "", "onfactId": "384768", "volgnummer": "B00413"}, {"id": "onfact_388625", "naam": "Comm.V Aurora Projects", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Scheepvaartlaan 36/4.03, 3500 Hasselt", "btw": "BE0659.783.508", "notitie": "", "onfactId": "388625", "volgnummer": "B00414"}, {"id": "onfact_388628", "naam": "Gilissen, Marc", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Kuringersteenweg 411, 3511 Hasselt", "btw": "BE0696.357.555", "notitie": "", "onfactId": "388628", "volgnummer": "B00415"}, {"id": "onfact_388843", "naam": "NV CES", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Rapertingenstraat 118, 3500 Hasselt", "btw": "BE0426.532.358", "notitie": "", "onfactId": "388843", "volgnummer": "B00416"}, {"id": "onfact_395276", "naam": "NV EMMANUELLE", "contactpersoon": "", "email": "", "telefoon": "", "adres": "de Schaetzengaarde 34, 3700 Tongeren", "btw": "BE0414.534.646", "notitie": "", "onfactId": "395276", "volgnummer": "B00417"}, {"id": "onfact_402404", "naam": "BVBA Haylo", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Bergstraat 7, 3500 Hasselt", "btw": "BE0550.492.420", "notitie": "", "onfactId": "402404", "volgnummer": "B00418"}, {"id": "onfact_402631", "naam": "BV BVBA MARC MARIS - BEDRIJFSREVISOR", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Dumortierlaan 70/0031, 8300 Knokke-Heist", "btw": "BE0474.972.475", "notitie": "", "onfactId": "402631", "volgnummer": "B00419"}, {"id": "onfact_406143", "naam": "BVBA Kalo", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Stationsstraat 80, 9880 Aalter", "btw": "BE0479.380.730", "notitie": "", "onfactId": "406143", "volgnummer": "B00420"}, {"id": "onfact_407619", "naam": "BVBA ADVOCAAT KRISTOF VANHOVE", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Pallekensbergstraat 35, 3511 Hasselt", "btw": "BE0559.973.476", "notitie": "", "onfactId": "407619", "volgnummer": "B00421"}, {"id": "onfact_438642", "naam": "Groven, Hilde", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Luikersteenweg 322, 3500 Hasselt", "btw": "BE0811.858.623", "notitie": "", "onfactId": "438642", "volgnummer": "B00422"}, {"id": "onfact_442448", "naam": "C.a.s. BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "De Lange Beemden 33, 3550 Heusden-Zolder", "btw": "BE0437.533.049", "notitie": "", "onfactId": "442448", "volgnummer": "B00423"}, {"id": "onfact_461454", "naam": "Travel Partners BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Halveweg 116, 3520 Zonhoven", "btw": "BE0466.486.559", "notitie": "", "onfactId": "461454", "volgnummer": "B00424"}, {"id": "onfact_461522", "naam": "Nv Chapo", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Sasstraat 4, 3500 Hasselt", "btw": "BE0668.432.146", "notitie": "", "onfactId": "461522", "volgnummer": "B00425"}, {"id": "onfact_496939", "naam": "Vof Jehoul - Schorpion", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Sint-Truidersteenweg 220, 3500 Hasselt", "btw": "BE0649.671.653", "notitie": "", "onfactId": "496939", "volgnummer": "B00426"}, {"id": "onfact_497084", "naam": "Nanof BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Nanofstraat 88, 3590 Diepenbeek", "btw": "BE0715.735.680", "notitie": "", "onfactId": "497084", "volgnummer": "B00427"}, {"id": "onfact_578409", "naam": "Sprl Opticiens Gervy", "contactpersoon": "", "email": "opticiengervy\u0040gmail.com", "telefoon": "02/652 27 19", "adres": "Rue Boisacq 10, 1330 Rixensart", "btw": "BE0479874440", "notitie": "", "onfactId": "578409", "volgnummer": "B00428"}, {"id": "onfact_588938", "naam": "Optiek Gysels", "contactpersoon": "", "email": "gyselsmartine\u0040telenet.be", "telefoon": "051/722660", "adres": "Hoogstraat 5, 8810 Lichtervelde", "btw": "BE0761.143.954", "notitie": "", "onfactId": "588938", "volgnummer": "B00429"}, {"id": "onfact_589692", "naam": "Advocatenkantoor Driessen", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Sint-Katarinaplein 15/3, 3500 Hasselt", "btw": "BE0897.475.867", "notitie": "", "onfactId": "589692", "volgnummer": "B00430"}, {"id": "onfact_594710", "naam": "WDR TRAVEL", "contactpersoon": "", "email": "info\u0040wdr-travel.be", "telefoon": "", "adres": "Guffenslaan 17, 3500 Hasselt", "btw": "BE0418.036.247", "notitie": "", "onfactId": "594710", "volgnummer": "B00431"}, {"id": "onfact_594753", "naam": "Domades BV", "contactpersoon": "", "email": "hans\u0040consultanim.be", "telefoon": "", "adres": "Laag Keizel 2/A, 3590 Diepenbeek", "btw": "BE0438.612.818", "notitie": "", "onfactId": "594753", "volgnummer": "B00432"}, {"id": "onfact_619106", "naam": "Dokter Kathleen Dieryck BV", "contactpersoon": "", "email": "info\u0040oaph.be", "telefoon": "", "adres": "Maastrichterstraat 97, 3500 Hasselt", "btw": "", "notitie": "", "onfactId": "619106", "volgnummer": "C00433"}, {"id": "onfact_619108", "naam": "Cornelissen", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Klotsenhoutstraat 13, 3600 Genk", "btw": "", "notitie": "", "onfactId": "619108", "volgnummer": "C00434"}, {"id": "onfact_621702", "naam": "Superette Lambrichts - Putzeys NV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Sint-Servatiusstraat 94/2, 3590 Diepenbeek", "btw": "BE0438.588.171", "notitie": "", "onfactId": "621702", "volgnummer": "B00435"}, {"id": "onfact_622746", "naam": "Eyewear Interim BVBA (Pearle Opticiens Tongeren)", "contactpersoon": "", "email": "philippe\u0040eyewear-interim.be", "telefoon": "012/238629", "adres": "Herkenrodesingel 19 B/4.1, 3500 Hasselt", "btw": "BE0646.914.774", "notitie": "", "onfactId": "622746", "volgnummer": "B00436"}, {"id": "onfact_623756", "naam": "Tandarts Van Cleynenbreugel", "contactpersoon": "", "email": "bartvcl78\u0040gmail.com", "telefoon": "", "adres": "Jaarmarktstraat 1/0.03, 3511 Kuringen", "btw": "", "notitie": "", "onfactId": "623756", "volgnummer": "C00437"}, {"id": "onfact_627791", "naam": "Baerts, Marc", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Vogelsancklaan 7, 3550 Heusden-Zolder", "btw": "BE0771.094.273", "notitie": "", "onfactId": "627791", "volgnummer": "B00438"}, {"id": "onfact_657125", "naam": "Comm.v Fyi Consultancy", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Bergstraat 43, 3500 Hasselt", "btw": "BE0689.606.355", "notitie": "", "onfactId": "657125", "volgnummer": "B00439"}, {"id": "onfact_657127", "naam": "Leenen, Audrey", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Gerard Mercatorlaan 28, 3500 Hasselt", "btw": "BE0659.943.953", "notitie": "", "onfactId": "657127", "volgnummer": "B00440"}, {"id": "onfact_666935", "naam": "Schepers - Cels Brood- En Banketbakkerij NV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Stationsstraat 87, 3545 Halen", "btw": "BE0446.266.316", "notitie": "", "onfactId": "666935", "volgnummer": "B00441"}, {"id": "onfact_687933", "naam": "Immo Econstruct BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Herdersstraat 1A, 3500 Hasselt", "btw": "BE0881.773.847", "notitie": "", "onfactId": "687933", "volgnummer": "B00442"}, {"id": "onfact_690140", "naam": "Verzekeringen Jos Neven", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Maastrichtersteenweg 137, 3500 Hasselt", "btw": "", "notitie": "", "onfactId": "690140", "volgnummer": "C00443"}, {"id": "onfact_694108", "naam": "Didden, Luc", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Vogelshofstraat 8, 3680 Maaseik", "btw": "BE0699.335.257", "notitie": "", "onfactId": "694108", "volgnummer": "B00444"}, {"id": "onfact_730042", "naam": "Didden, Luc", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Vogelshofstraat 8, 3680 Maaseik", "btw": "BE0699.335.257", "notitie": "", "onfactId": "730042", "volgnummer": "B00445"}, {"id": "onfact_730046", "naam": "Vanthienen, Eddy", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Kruisherenlaan 6, 3500 Hasselt", "btw": "BE0707.114.459", "notitie": "", "onfactId": "730046", "volgnummer": "B00446"}, {"id": "onfact_735473", "naam": "Dokter Vrancken Aniek", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Hyacintenlaan 15, 3550 Zolder", "btw": "", "notitie": "", "onfactId": "735473", "volgnummer": "C00447"}, {"id": "onfact_744047", "naam": "Liebel BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Daniëlsstraat 12, 3500 Hasselt", "btw": "BE0892.498.681", "notitie": "", "onfactId": "744047", "volgnummer": "B00448"}, {"id": "onfact_749487", "naam": "Corbacio BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Maastrichterstraat 60, 3500 Hasselt", "btw": "BE0832.420.841", "notitie": "", "onfactId": "749487", "volgnummer": "B00449"}, {"id": "onfact_752299", "naam": "Logopedie Severine Peremans", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Reitveld 19, 3550 Heusden-Zolder", "btw": "BE0752.980.118", "notitie": "", "onfactId": "752299", "volgnummer": "B00450"}, {"id": "onfact_831162", "naam": "L'Hoest", "contactpersoon": "", "email": "", "telefoon": "", "adres": "", "btw": "", "notitie": "", "onfactId": "831162", "volgnummer": "C00451"}, {"id": "onfact_832163", "naam": "Comm.v Kerris Dirk-jan", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Vlemingstraat 15, 3850 Nieuwerkerken (Limb.)", "btw": "BE0544.934.221", "notitie": "", "onfactId": "832163", "volgnummer": "B00452"}, {"id": "onfact_840006", "naam": "Global Technics Consulting BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Sint-Jobstraat 54/2, 3550 Heusden-Zolder", "btw": "BE 0828.769.186", "notitie": "", "onfactId": "840006", "volgnummer": "B00453"}, {"id": "onfact_842223", "naam": "Ghysels BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Toekomststraat 37, 3500 Hasselt", "btw": "", "notitie": "", "onfactId": "842223", "volgnummer": "C00454"}, {"id": "onfact_858774", "naam": "Jacon BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Heiligenbornstraat 60, 3570 Alken", "btw": "BE0760.658.063", "notitie": "", "onfactId": "858774", "volgnummer": "B00455"}, {"id": "onfact_859006", "naam": "Budeners, Filip", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Kolonel Dusartplein 35/42, 3500 Hasselt", "btw": "BE0643.720.407", "notitie": "", "onfactId": "859006", "volgnummer": "B00456"}, {"id": "onfact_867963", "naam": "Poelmans, Bram", "contactpersoon": "", "email": "bram_poelmans\u0040hotmail.com", "telefoon": "", "adres": "Helstraat 1, 3720 Vliermaalroot", "btw": "BE0700.860.632", "notitie": "", "onfactId": "867963", "volgnummer": "B00457"}, {"id": "onfact_869384", "naam": "Vanstreels BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Pietelbeekstraat 5, 3500 Hasselt", "btw": "BE0866530395", "notitie": "", "onfactId": "869384", "volgnummer": "B00458"}, {"id": "onfact_872069", "naam": "Optopolis BV", "contactpersoon": "", "email": "info\u0040optiekeva.be", "telefoon": "012/210505", "adres": "Maastrichtersteenweg 224/1, 3700 Tongeren", "btw": "BE0537.236.874", "notitie": "", "onfactId": "872069", "volgnummer": "B00459"}, {"id": "onfact_875895", "naam": "Keytime BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Sint-Jobstraat 142, 3550 Heusden-Zolder", "btw": "BE0630.978.466", "notitie": "", "onfactId": "875895", "volgnummer": "B00460"}, {"id": "onfact_884094", "naam": "Mevr. Henrioulle", "contactpersoon": "", "email": "fabie.henrioulle\u0040gmail.com", "telefoon": "", "adres": "Luikersteenweg 401, 3500 Hasselt", "btw": "BE0815.220.563", "notitie": "", "onfactId": "884094", "volgnummer": "B00461"}, {"id": "onfact_886801", "naam": "Innovastore BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Europark, 1708 3530 Houthalen-Helchteren", "btw": "BE0833.753.602", "notitie": "", "onfactId": "886801", "volgnummer": "B00462"}, {"id": "onfact_897350", "naam": "Nijs, Rigo", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Hekslaan(Heks) 101, 3870 Heers", "btw": "BE0730.356.550", "notitie": "", "onfactId": "897350", "volgnummer": "B00463"}, {"id": "onfact_899583", "naam": "Exactomat International", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Gebanne-Groezenstraat 65, 3500 Hasselt", "btw": "BE0460.633.697", "notitie": "", "onfactId": "899583", "volgnummer": "B00464"}, {"id": "onfact_903458", "naam": "Caribel Hasselt NV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Industrieweg-Zuid, 1338 3520 Zonhoven", "btw": "BE0438.537.295", "notitie": "", "onfactId": "903458", "volgnummer": "B00465"}, {"id": "onfact_911870", "naam": "Lindelauf, Ianthe", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Kneippstraat 128, 3600 Genk", "btw": "BE0678.782.046", "notitie": "", "onfactId": "911870", "volgnummer": "B00466"}, {"id": "onfact_915661", "naam": "Christiaens, Nathalie", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Dokter Willemsstraat 17/2, 3500 Hasselt", "btw": "BE0647.354.838", "notitie": "", "onfactId": "915661", "volgnummer": "B00467"}, {"id": "onfact_924907", "naam": "Sa Garage Peeters Et Fils", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Rue de la Chapelle(V) 3/A, 5370 Havelange", "btw": "BE0418.987.738", "notitie": "", "onfactId": "924907", "volgnummer": "B00468"}, {"id": "onfact_924911", "naam": "Hulpverleningszone Zuidwest Limburg", "contactpersoon": "", "email": "boekhouding\u0040zuidwestlimburg.be", "telefoon": "", "adres": "Zwarte-Brugstraat 1, 3500 Hasselt", "btw": "BE0500.919.876", "notitie": "", "onfactId": "924911", "volgnummer": "B00469"}, {"id": "onfact_924913", "naam": "Umami Catering NV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Slingerweg 4, 3600 Genk", "btw": "BE0464.302.376", "notitie": "", "onfactId": "924913", "volgnummer": "B00470"}, {"id": "onfact_929027", "naam": "Optiek Karine BVBA", "contactpersoon": "", "email": "info\u0040optiekkarine.be", "telefoon": "", "adres": "Brugstraat 75, 3550 Heusden-Zolder", "btw": "BE0479.123.679", "notitie": "", "onfactId": "929027", "volgnummer": "B00471"}, {"id": "onfact_929326", "naam": "Timmermans", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Rue de la Chapelle(V) 3, 5370 Havelange", "btw": "", "notitie": "", "onfactId": "929326", "volgnummer": "C00472"}, {"id": "onfact_938240", "naam": "Veka NV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Genkersteenweg 241 F, 3500 Hasselt", "btw": "BE0467.205.844", "notitie": "", "onfactId": "938240", "volgnummer": "B00473"}, {"id": "onfact_938707", "naam": "Wouters, Nicolaas", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Sint-Katarinaplein 19/14, 3500 Hasselt", "btw": "BE0767.300.583", "notitie": "", "onfactId": "938707", "volgnummer": "B00474"}, {"id": "onfact_938778", "naam": "Politie Limburg Regio Hoofdstad", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Zwarte-Brugstraat 6, 3500 Hasselt", "btw": "", "notitie": "", "onfactId": "938778", "volgnummer": "C00475"}, {"id": "onfact_939028", "naam": "Lwc NV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Kramerslaan 13/0.2, 3500 Hasselt", "btw": "BE0465.437.078", "notitie": "", "onfactId": "939028", "volgnummer": "B00476"}, {"id": "onfact_940376", "naam": "Fre-projects BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Maastrichtersteenweg 166/3, 3500 Hasselt", "btw": "BE0642.752.682", "notitie": "", "onfactId": "940376", "volgnummer": "B00477"}, {"id": "onfact_940379", "naam": "Thuisverpleging Reniers", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Grote Steenweg 250, 3454 Geetbets", "btw": "", "notitie": "", "onfactId": "940379", "volgnummer": "C00478"}, {"id": "onfact_944188", "naam": "Bonné, Kim", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Grasstraat 27, 3500 Hasselt", "btw": "BE0817.711.879", "notitie": "", "onfactId": "944188", "volgnummer": "B00479"}, {"id": "onfact_946961", "naam": "Zenva BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Weverstraat 31, 3940 Hechtel-Eksel", "btw": "BE0859.785.234", "notitie": "", "onfactId": "946961", "volgnummer": "B00480"}, {"id": "onfact_950055", "naam": "Studieau Architectuur BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Kneippstraat 128, 3600 Genk", "btw": "BE0767.966.618", "notitie": "", "onfactId": "950055", "volgnummer": "B00481"}, {"id": "onfact_960754", "naam": "Fredricx", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Luikersteenweg 144, 3500 Hasselt", "btw": "BE0707.472.864", "notitie": "", "onfactId": "960754", "volgnummer": "B00482"}, {"id": "onfact_961593", "naam": "Bogaerts, Lisbeth", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Toekomststraat 12, 3500 Hasselt", "btw": "BE0771.270.952", "notitie": "", "onfactId": "961593", "volgnummer": "B00483"}, {"id": "onfact_961943", "naam": "HOEDEMAEKERS", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Sint-Katarinaplein 22, 3500 Hasselt", "btw": "BE0458.575.121", "notitie": "", "onfactId": "961943", "volgnummer": "B00484"}, {"id": "onfact_961951", "naam": "Boets, Jean-Pierre", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Kalverstraat 66, 3320 Hoegaarden", "btw": "BE0687.891.336", "notitie": "", "onfactId": "961951", "volgnummer": "B00485"}, {"id": "onfact_993235", "naam": "Optique Rochez", "contactpersoon": "", "email": "e.rochez\u0040skynet.be", "telefoon": "023852076", "adres": "Av Raymond Brassinne 10/A000, 1420 Braine-l'Alleud", "btw": "BE0611821560", "notitie": "", "onfactId": "993235", "volgnummer": "B00486"}, {"id": "onfact_995263", "naam": "Dhr. Lismont", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Opeindestraat 8 /B000, 3720 Kortessem", "btw": "", "notitie": "", "onfactId": "995263", "volgnummer": "C00487"}, {"id": "onfact_997413", "naam": "Comm.v Mva Corp", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Germeer 26, 2491 Balen", "btw": "BE0672.706.579", "notitie": "", "onfactId": "997413", "volgnummer": "B00488"}, {"id": "onfact_1001088", "naam": "Daniels, Hilde", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Casterstraat 100, 3500 Hasselt", "btw": "BE0773.123.256", "notitie": "", "onfactId": "1001088", "volgnummer": "B00489"}, {"id": "onfact_1011656", "naam": "Tilia BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Poreistraat 42 b2, 3600 Genk", "btw": "BE0431.568.143", "notitie": "", "onfactId": "1011656", "volgnummer": "B00490"}, {"id": "onfact_1013066", "naam": "C&v Invest BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Kempische Kaai 65 3.01, 3500 Hasselt", "btw": "BE0831820035", "notitie": "", "onfactId": "1013066", "volgnummer": "B00491"}, {"id": "onfact_1015863", "naam": "Leyssens - Jooken VOF", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Gebrandestraat 37, 3511 Hasselt", "btw": "BE0820.981.373", "notitie": "", "onfactId": "1015863", "volgnummer": "B00492"}, {"id": "onfact_1018134", "naam": "Smits, Eddy", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Sint-Katarinaplein 12/33, 3500 Hasselt", "btw": "BE0696.358.941", "notitie": "", "onfactId": "1018134", "volgnummer": "B00493"}, {"id": "onfact_1020733", "naam": "Verpleegkunidge Corthouts", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Ekkerpustraat 31, 3520 Zonhoven", "btw": "", "notitie": "", "onfactId": "1020733", "volgnummer": "C00494"}, {"id": "onfact_1021380", "naam": "Claes BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Bosstraat 75.1, 3560 Lummen", "btw": "BE0433.924.847", "notitie": "", "onfactId": "1021380", "volgnummer": "B00495"}, {"id": "onfact_1029671", "naam": "Cvoa Boekplus", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Pietelbeekstraat 38, 3500 Hasselt", "btw": "BE0455.195.066", "notitie": "", "onfactId": "1029671", "volgnummer": "B00496"}, {"id": "onfact_1029677", "naam": "Baudewyn, Willem", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Hefveldstraat 66, 3500 Hasselt", "btw": "BE0851.263.585", "notitie": "", "onfactId": "1029677", "volgnummer": "B00497"}, {"id": "onfact_1030215", "naam": "Dokter Bossers", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Zeven-Septemberlaan 7, 3500 Hasselt", "btw": "", "notitie": "", "onfactId": "1030215", "volgnummer": "C00498"}, {"id": "onfact_1035968", "naam": "Rvv360 BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Villerspark 5/14, 3500 Hasselt", "btw": "BE0898.364.906", "notitie": "", "onfactId": "1035968", "volgnummer": "B00499"}, {"id": "onfact_1038435", "naam": "Huskens", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Willekensmolenstraat 90, 3500 Hasselt", "btw": "", "notitie": "", "onfactId": "1038435", "volgnummer": "C00500"}, {"id": "onfact_1038480", "naam": "Zien BV", "contactpersoon": "", "email": "info\u0040zienoptiek.be", "telefoon": "0474/091866", "adres": "Meylandtlaan 106, 3550 Heusden-Zolder", "btw": "BE0766.647.121", "notitie": "", "onfactId": "1038480", "volgnummer": "B00501"}, {"id": "onfact_1039024", "naam": "Villa Viscom BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Zomerstraat 25, 3500 Hasselt", "btw": "BE0892995163", "notitie": "", "onfactId": "1039024", "volgnummer": "B00502"}, {"id": "onfact_1044871", "naam": "Dokter Vrancken", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Hyancintenlaan 15, 3550 Zolder", "btw": "", "notitie": "", "onfactId": "1044871", "volgnummer": "C00503"}, {"id": "onfact_1052576", "naam": "E4d BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Hassaluthdreef 38, 3500 Hasselt", "btw": "BE0508.820.923", "notitie": "", "onfactId": "1052576", "volgnummer": "B00504"}, {"id": "onfact_1052578", "naam": "Vhmco BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Kuringersteenweg 176, 3500 Hasselt", "btw": "BE0562.862.789", "notitie": "", "onfactId": "1052578", "volgnummer": "B00505"}, {"id": "onfact_1063177", "naam": "Gonnissen, Katrien", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Sint-Lambrechts-Herkstraat 26, 3500 Hasselt", "btw": "BE0829.876.570", "notitie": "", "onfactId": "1063177", "volgnummer": "B00506"}, {"id": "onfact_1064646", "naam": "Vandebroeck, Yvette", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Pijpersveldstraat 9, 3500 Hasselt", "btw": "BE0707.229.374", "notitie": "", "onfactId": "1064646", "volgnummer": "B00507"}, {"id": "onfact_1072627", "naam": "Image Design VOF", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Muggenstraat 45/1, 3500 Hasselt", "btw": "BE0842.021.069", "notitie": "", "onfactId": "1072627", "volgnummer": "B00508"}, {"id": "onfact_1077793", "naam": "Paenhuysen, Michel", "contactpersoon": "", "email": "am.paenhuysen\u0040skynet.be", "telefoon": "", "adres": "Hogebergstraat 5, 3500 Hasselt", "btw": "BE0696.454.456", "notitie": "", "onfactId": "1077793", "volgnummer": "B00509"}, {"id": "onfact_1079415", "naam": "Pepels, Leen", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Alfons Jeurissenstraat 15, 3590 Diepenbeek", "btw": "BE0776.655.442", "notitie": "", "onfactId": "1079415", "volgnummer": "B00510"}, {"id": "onfact_1086703", "naam": "Jans Kinesitherapie BE", "contactpersoon": "", "email": "Geoffrey.jans\u0040hotmail.com", "telefoon": "", "adres": "Hemelveldstraat 96, 3570 Alken", "btw": "BE0744.521.421", "notitie": "", "onfactId": "1086703", "volgnummer": "B00511"}, {"id": "onfact_1088110", "naam": "Gabo Bielen NV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Waardstraat 6, 3520 Zonhoven", "btw": "BE0429.913.995", "notitie": "", "onfactId": "1088110", "volgnummer": "B00512"}, {"id": "onfact_1089290", "naam": "Dokterspraktijk MAN UTD BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Plankeweidelaan 11, 3500 Hasselt", "btw": "BE0463.448.380", "notitie": "", "onfactId": "1089290", "volgnummer": "B00513"}, {"id": "onfact_1110652", "naam": "Arde", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Sint-Katarinalaan 9/18, 3500 Hasselt", "btw": "BE0855.590.342", "notitie": "", "onfactId": "1110652", "volgnummer": "B00514"}, {"id": "onfact_1110653", "naam": "Leenen, Audrey", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Gerard Mercatorlaan 28, 3500 Hasselt", "btw": "BE0659.943.953", "notitie": "", "onfactId": "1110653", "volgnummer": "B00515"}, {"id": "onfact_1113267", "naam": "Optiek Van De Voorde", "contactpersoon": "", "email": "info\u0040optiekvandevoorde.be", "telefoon": "054411703", "adres": "Lessensestraat 35, 9500 Geraardsbergen", "btw": "BE0874838149", "notitie": "", "onfactId": "1113267", "volgnummer": "B00516"}, {"id": "onfact_1136270", "naam": "Atelier Fiorentina", "contactpersoon": "", "email": "", "telefoon": "", "adres": "A. Jeurissenstraat 15, 3590 Diepenbeek", "btw": "BE0766.655.442", "notitie": "", "onfactId": "1136270", "volgnummer": "B00517"}, {"id": "onfact_1136536", "naam": "Tamara Sals Clinical Expertise BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Luikersteenweg 160, 3500 Hasselt", "btw": "BE0669.506.074", "notitie": "", "onfactId": "1136536", "volgnummer": "B00518"}, {"id": "onfact_1147603", "naam": "Distributie Govaerts Yves BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Herstalstraat 16, 3830 Wellen", "btw": "BE0861.276.658", "notitie": "", "onfactId": "1147603", "volgnummer": "B00519"}, {"id": "onfact_1179300", "naam": "Qalibrate BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Eikendreef 10, 3500 Hasselt", "btw": "BE0473.591.018", "notitie": "", "onfactId": "1179300", "volgnummer": "B00520"}, {"id": "onfact_1180884", "naam": "Artium BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Heerbosstraat 72, 3583 Beringen", "btw": "BE0663.711.612", "notitie": "", "onfactId": "1180884", "volgnummer": "B00521"}, {"id": "onfact_1182263", "naam": "Victus BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Guido Gezellestraat 21, 3500 Hasselt", "btw": "BE0468.347.870", "notitie": "", "onfactId": "1182263", "volgnummer": "B00522"}, {"id": "onfact_1184590", "naam": "Heleven, Martine", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Harpstraat 12, 3500 Hasselt", "btw": "BE0700.540.037", "notitie": "", "onfactId": "1184590", "volgnummer": "B00523"}, {"id": "onfact_1187792", "naam": "Vertessen, Marc", "contactpersoon": "", "email": "", "telefoon": "", "adres": "van Willigenstraat 10, 3560 Lummen", "btw": "BE0771.084.474", "notitie": "", "onfactId": "1187792", "volgnummer": "B00524"}, {"id": "onfact_1194773", "naam": "Magarino Consulting BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Jef Koningslaan 112, 3500 Hasselt", "btw": "BE0741.419.302", "notitie": "", "onfactId": "1194773", "volgnummer": "B00525"}, {"id": "onfact_1198518", "naam": "Honinx BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Diestersteenweg 358/1.1, 3510 Hasselt", "btw": "BE0873.003.067", "notitie": "", "onfactId": "1198518", "volgnummer": "B00526"}, {"id": "onfact_1214819", "naam": "Bruyninckx, Eric", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Thonissenlaan 36, 3500 Hasselt", "btw": "BE0707.286.881", "notitie": "", "onfactId": "1214819", "volgnummer": "B00527"}, {"id": "onfact_1220947", "naam": "BV dokterspraktijk C. Langenaken", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Bosstraat 162, 3500 Hasselt", "btw": "", "notitie": "", "onfactId": "1220947", "volgnummer": "C00528"}, {"id": "onfact_1220949", "naam": "Van Esser, Steven", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Peter Benoitstraat 33, 3500 Hasselt", "btw": "BE0696.503.946", "notitie": "", "onfactId": "1220949", "volgnummer": "B00529"}, {"id": "onfact_1221335", "naam": "Coussée, Suzy", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Peter Benoitstraat 27, 3500 Hasselt", "btw": "BE0884.411.059", "notitie": "", "onfactId": "1221335", "volgnummer": "B00530"}, {"id": "onfact_1221351", "naam": "Hess, Bruno", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Beukenstraat 14, 3665 As", "btw": "BE0675.563.626", "notitie": "", "onfactId": "1221351", "volgnummer": "B00531"}, {"id": "onfact_1221485", "naam": "Vanlommel Wim", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Sint-Truidersteenweg 205/0001, 3500 Hasselt", "btw": "BE0784.687.537", "notitie": "", "onfactId": "1221485", "volgnummer": "B00532"}, {"id": "onfact_1222584", "naam": "Crespi, Peter", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Weverstraat 31, 3940 Hechtel-Eksel", "btw": "BE0863.162.616", "notitie": "", "onfactId": "1222584", "volgnummer": "B00533"}, {"id": "onfact_1222646", "naam": "Brasserie Kiewit BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Heuveneindeweg 129, 3520 Zonhoven", "btw": "BE0827.465.626", "notitie": "", "onfactId": "1222646", "volgnummer": "B00534"}, {"id": "onfact_1226225", "naam": "Gebroeders Lambrecks NV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Herkenrodesingel 87, 3500 Hasselt", "btw": "BE0414.627.884", "notitie": "", "onfactId": "1226225", "volgnummer": "B00535"}, {"id": "onfact_1247718", "naam": "By Bas Optiek", "contactpersoon": "", "email": "info\u0040bybasoptiek.com", "telefoon": "0031243232424", "adres": "Stikke Hezelstraat 35, 6511 JV Nijmegen", "btw": "", "notitie": "", "onfactId": "1247718", "volgnummer": "C00536"}, {"id": "onfact_1250050", "naam": "Dokter Celis", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Trekschurenstraat 5, 3500 Hasselt", "btw": "", "notitie": "", "onfactId": "1250050", "volgnummer": "C00537"}, {"id": "onfact_1250144", "naam": "Immo Trading BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Hassaluthdreef 2/E, 3500 Hasselt", "btw": "BE0879.653.111", "notitie": "", "onfactId": "1250144", "volgnummer": "B00538"}, {"id": "onfact_1252858", "naam": "Vivendum Projecten BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Kasteelstraat 2, 3890 Gingelom", "btw": "BE0727.373.306", "notitie": "", "onfactId": "1252858", "volgnummer": "B00539"}, {"id": "onfact_1258343", "naam": "Van Damme Frederik BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Leterweg 57, 3740 Bilzen", "btw": "BE0657.989.404", "notitie": "", "onfactId": "1258343", "volgnummer": "B00540"}, {"id": "onfact_1258346", "naam": "Lexanot BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Leterweg 57, 3740 Bilzen", "btw": "BE0754.880.328", "notitie": "", "onfactId": "1258346", "volgnummer": "B00541"}, {"id": "onfact_1267748", "naam": "Franssen BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Demerstraat 51, 3500 Hasselt", "btw": "BE0415.755.361", "notitie": "", "onfactId": "1267748", "volgnummer": "B00542"}, {"id": "onfact_1267759", "naam": "B.e.s.t. BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Zwartvennestraat 8, 3500 Hasselt", "btw": "BE0462.310.215", "notitie": "", "onfactId": "1267759", "volgnummer": "B00543"}, {"id": "onfact_1284230", "naam": "Optiek Cerulis", "contactpersoon": "", "email": "cerulis\u0040hotmail.com", "telefoon": "011 31 43 20", "adres": "Sint-Maartenplein 74, 3512 Stevoort", "btw": "BE0441641592", "notitie": "", "onfactId": "1284230", "volgnummer": "B00544"}, {"id": "onfact_1295443", "naam": "Carnotensis, Lieselotte", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Dieregaertstraat 7/BUS4, 3570 Alken", "btw": "BE0535.980.527", "notitie": "", "onfactId": "1295443", "volgnummer": "B00545"}, {"id": "onfact_1304237", "naam": "International Commercial Relations BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Hasseltse Beverzakstraat 191/D, 3500 Hasselt", "btw": "BE0835621940", "notitie": "", "onfactId": "1304237", "volgnummer": "B00546"}, {"id": "onfact_1307193", "naam": "Stejl Jewelry (Myny, Mike)", "contactpersoon": "", "email": "shop\u0040stejl.be", "telefoon": "", "adres": "Elf-Novemberlaan 9, 3500 Hasselt", "btw": "BE0765978712", "notitie": "", "onfactId": "1307193", "volgnummer": "B00547"}, {"id": "onfact_1323588", "naam": "Petra Palmers", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Valstraat 18, 3570 Alken", "btw": "", "notitie": "", "onfactId": "1323588", "volgnummer": "C00548"}, {"id": "onfact_1328788", "naam": "Key Consulting BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Verhenis 2, 3700 Tongeren", "btw": "BE0460.006.662", "notitie": "", "onfactId": "1328788", "volgnummer": "B00549"}, {"id": "onfact_1349655", "naam": "Durel BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Schaapsweg 63/1, 3550 Heusden-Zolder", "btw": "BE0505959522", "notitie": "", "onfactId": "1349655", "volgnummer": "B00550"}, {"id": "onfact_1373002", "naam": "Glazoo BV", "contactpersoon": "", "email": "info\u0040glazoo.be", "telefoon": "", "adres": "Emiel Banningstraat 10, 2000 Antwerpen", "btw": "BE0763450772", "notitie": "", "onfactId": "1373002", "volgnummer": "B00551"}, {"id": "onfact_1383374", "naam": "Sprl Matthieu Duchene Design", "contactpersoon": "", "email": "matthieu.duchene\u0040skynet.be>", "telefoon": "", "adres": "Avenue Ernest Cambier 47/19, 1030 Schaerbeek", "btw": "BE 0883 190 542", "notitie": "", "onfactId": "1383374", "volgnummer": "B00552"}, {"id": "onfact_1412963", "naam": "Optiek De Vel", "contactpersoon": "", "email": "info\u0040optiekdevel.be", "telefoon": "014/217728", "adres": "Retiesebaan 12, 2460 Kasterlee", "btw": "BE0882.991.196", "notitie": "", "onfactId": "1412963", "volgnummer": "B00553"}, {"id": "onfact_1430207", "naam": "Thys, Kristien", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Vuurkruisenlaan 3, 3500 Hasselt", "btw": "BE0812.662.436", "notitie": "", "onfactId": "1430207", "volgnummer": "B00554"}, {"id": "onfact_1435282", "naam": "Verzekeringskantoor Box Hubert BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Armand Hertzstraat 54, 3500 Hasselt", "btw": "BE0806017639", "notitie": "", "onfactId": "1435282", "volgnummer": "B00555"}, {"id": "onfact_1443446", "naam": "Tans BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Maastrichtersteenweg 93, 3500 Hasselt", "btw": "BE0442.119.169", "notitie": "", "onfactId": "1443446", "volgnummer": "B00556"}, {"id": "onfact_1459329", "naam": "Slegers Paul BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Welvaartstraat 21/5, 3500 Hasselt", "btw": "BE0461.377.233", "notitie": "", "onfactId": "1459329", "volgnummer": "B00557"}, {"id": "onfact_1472532", "naam": "Optica Limburg NV (Optica Genk)", "contactpersoon": "", "email": "genk\u0040optica.be", "telefoon": "089868790", "adres": "Capucienenstraat 10, 3500 Hasselt", "btw": "BE0795144137", "notitie": "", "onfactId": "1472532", "volgnummer": "B00558"}, {"id": "onfact_1473084", "naam": "Aberrak, Jahfar (Optiforce)", "contactpersoon": "", "email": "info\u0040studio-eyecare.com", "telefoon": "0031645953102", "adres": "Geuzenstraat 29, 2000 Antwerpen", "btw": "BE0646734731", "notitie": "", "onfactId": "1473084", "volgnummer": "B00559"}, {"id": "onfact_1485033", "naam": "Bibob BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Carnegielaan 27, 3500 Hasselt", "btw": "BE0667.769.972", "notitie": "", "onfactId": "1485033", "volgnummer": "B00560"}, {"id": "onfact_1488027", "naam": "DADASCO (Optiek Ellen)", "contactpersoon": "", "email": "info\u0040optiek-ellen.be", "telefoon": "0472/175481", "adres": "Vredestraat 14, 3990 Peer", "btw": "BE0475.120.945", "notitie": "", "onfactId": "1488027", "volgnummer": "B00561"}, {"id": "onfact_1488905", "naam": "Lybre VOF", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Nachtegaalstraat 5, 3920 Lommel", "btw": "BE0777971573", "notitie": "", "onfactId": "1488905", "volgnummer": "B00562"}, {"id": "onfact_1488920", "naam": "Jeuricon BV", "contactpersoon": "", "email": "info\u0040contactlenzenjeuris.be", "telefoon": "011/225115", "adres": "Hoog Keizel 13, 3590 Diepenbeek", "btw": "BE0470.941.433", "notitie": "", "onfactId": "1488920", "volgnummer": "B00563"}, {"id": "onfact_1489058", "naam": "HERMANS DIRK & HERMANS ROBERT", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Herdersstraat 1, 3500 Hasselt", "btw": "BE0707.445.546", "notitie": "", "onfactId": "1489058", "volgnummer": "B00564"}, {"id": "onfact_1489203", "naam": "Cosemans, Tom", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Bosstraat 223, 3500 Hasselt", "btw": "BE0879.492.664", "notitie": "", "onfactId": "1489203", "volgnummer": "B00565"}, {"id": "onfact_1490135", "naam": "Lenaerts, Marie", "contactpersoon": "", "email": "marlies.lenaerts\u0040outlook.com", "telefoon": "0477594325", "adres": "Zwartvennestraat 8, 3500 Hasselt", "btw": "BE0696.618.366", "notitie": "", "onfactId": "1490135", "volgnummer": "B00566"}, {"id": "onfact_1498606", "naam": "Dimitri Michils BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Guffenslaan 58, 3500 Hasselt", "btw": "BE0886.209.222", "notitie": "", "onfactId": "1498606", "volgnummer": "B00567"}, {"id": "onfact_1500134", "naam": "Macides BV", "contactpersoon": "", "email": "hdes\u0040telenet.be", "telefoon": "", "adres": "Laag Keizel 2/A, 3590 Diepenbeek", "btw": "BE0479.338.960", "notitie": "", "onfactId": "1500134", "volgnummer": "B00568"}, {"id": "onfact_1500913", "naam": "Sofie Souvereyns BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Ginderoverstraat 62, 3590 Diepenbeek", "btw": "BE0758.654.519", "notitie": "", "onfactId": "1500913", "volgnummer": "B00569"}, {"id": "onfact_1512772", "naam": "De L'arbre, Johan", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Dahliastraat 11, 3510 Hasselt", "btw": "BE0898.337.982", "notitie": "", "onfactId": "1512772", "volgnummer": "B00570"}, {"id": "onfact_1521541", "naam": "Mathanje BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Hyacintenlaan 15, 3550 Heusden-Zolder", "btw": "BE0778.776.673", "notitie": "", "onfactId": "1521541", "volgnummer": "B00571"}, {"id": "onfact_1534868", "naam": "Suzanne Adams Exquisite Jewellery BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Kapelstraat 18, 3500 Hasselt", "btw": "BE0764.951.601", "notitie": "", "onfactId": "1534868", "volgnummer": "B00572"}, {"id": "onfact_1539967", "naam": "Optica Limburg NV (Hasselt)", "contactpersoon": "", "email": "hasselt\u0040optica.be", "telefoon": "011/29 50 20", "adres": "Capucienenstraat 10, 3500 Hasselt", "btw": "BE0795144137", "notitie": "", "onfactId": "1539967", "volgnummer": "B00573"}, {"id": "onfact_1559834", "naam": "Optiek Unique BV", "contactpersoon": "", "email": "welkom\u0040optiekunique.be", "telefoon": "011/ 35 26 45", "adres": "Luikersteenweg 313, 3500 Hasselt", "btw": "BE0771 835 136", "notitie": "", "onfactId": "1559834", "volgnummer": "B00574"}, {"id": "onfact_1574086", "naam": "HAMAVER", "contactpersoon": "", "email": "michel\u0040hamaver.be", "telefoon": "", "adres": "Kramerslaan 13, 3500 Hasselt", "btw": "BE0599.947.176", "notitie": "", "onfactId": "1574086", "volgnummer": "B00575"}, {"id": "onfact_1580274", "naam": "Krosbow BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Hemelingenstraat 37//, 0301 3700 Tongeren", "btw": "BE0812.266.617", "notitie": "", "onfactId": "1580274", "volgnummer": "B00576"}, {"id": "onfact_1581937", "naam": "C-time BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Bosstraat 103, 3500 Hasselt", "btw": "BE0811.248.315", "notitie": "", "onfactId": "1581937", "volgnummer": "B00577"}, {"id": "onfact_1582763", "naam": "Elevatis VOF", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Luikersteenweg 518, 3920 Lommel", "btw": "BE0740.724.662", "notitie": "", "onfactId": "1582763", "volgnummer": "B00578"}, {"id": "onfact_1606705", "naam": "Apotheek Theunis BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Maastrichtersteenweg 49, 3500 Hasselt", "btw": "BE0888.884.541", "notitie": "", "onfactId": "1606705", "volgnummer": "B00579"}, {"id": "onfact_1608226", "naam": "BV Dokterspraktijk C. Langenaken", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Bosstraat 162, 3500 Hasselt", "btw": "", "notitie": "", "onfactId": "1608226", "volgnummer": "C00580"}, {"id": "onfact_1624700", "naam": "Christiaens, Nathalie", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Dokter Willemsstraat 17/2, 3500 Hasselt", "btw": "BE0647.354.838", "notitie": "", "onfactId": "1624700", "volgnummer": "B00581"}, {"id": "onfact_1632139", "naam": "Optiek Biesemans", "contactpersoon": "", "email": "hilde.biesemans\u0040telenet.be", "telefoon": "052330859", "adres": "Sint-Ursmarusstraat (BAA) 84, 9200 Dendermonde", "btw": "BE0743.105.023", "notitie": "", "onfactId": "1632139", "volgnummer": "B00582"}, {"id": "onfact_1633245", "naam": "DOKTER PETERMANS STÉPHANIE", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Gorsemweg 209, 3800 Sint-Truiden", "btw": "BE0713.874.567", "notitie": "", "onfactId": "1633245", "volgnummer": "B00583"}, {"id": "onfact_1633495", "naam": "Mekers-broekx Architectenvennootschap BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Sint-Katarinaplein 27, 3500 Hasselt", "btw": "BE0898.366.488", "notitie": "", "onfactId": "1633495", "volgnummer": "B00584"}, {"id": "onfact_1648646", "naam": "Delbare, Paul", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Guldensporenplein 6/1, 3500 Hasselt", "btw": "BE0707.239.272", "notitie": "", "onfactId": "1648646", "volgnummer": "B00585"}, {"id": "onfact_1650915", "naam": "Sun Services & Co VOF", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Rederijkersstraat 15/3, 3500 Hasselt", "btw": "BE0833.339.866", "notitie": "", "onfactId": "1650915", "volgnummer": "B00586"}, {"id": "onfact_1650928", "naam": "Koffie & Zoë BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Sint-Katarinaplein 12/1, 3500 Hasselt", "btw": "BE0753.866.281", "notitie": "", "onfactId": "1650928", "volgnummer": "B00587"}, {"id": "onfact_1650934", "naam": "Dich BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Oeleinderheide 5, 3665 As", "btw": "BE0789.865.753", "notitie": "", "onfactId": "1650934", "volgnummer": "B00588"}, {"id": "onfact_1650937", "naam": "Vastgoed & Advies BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Sint-Katarinalaan 7-9, 3500 Hasselt", "btw": "BE0812.395.982", "notitie": "", "onfactId": "1650937", "volgnummer": "B00589"}, {"id": "onfact_1650960", "naam": "Bocca BVBA", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Springstraat 10, 3530 Houthalen-Helchteren", "btw": "BE0478.699.453", "notitie": "", "onfactId": "1650960", "volgnummer": "B00590"}, {"id": "onfact_1652923", "naam": "De Kegel, Annelies", "contactpersoon": "", "email": "", "telefoon": "", "adres": "", "btw": "BE0680.584.761", "notitie": "", "onfactId": "1652923", "volgnummer": "B00591"}, {"id": "onfact_1674355", "naam": "Parochie Catharina", "contactpersoon": "", "email": "", "telefoon": "", "adres": "", "btw": "", "notitie": "", "onfactId": "1674355", "volgnummer": "C00592"}, {"id": "onfact_1676584", "naam": "Pagema BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Jan Palfijnlaan 1, 3500 Hasselt", "btw": "BE0760.991.427", "notitie": "", "onfactId": "1676584", "volgnummer": "B00593"}, {"id": "onfact_1707078", "naam": "Steegmans, Bert", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Singelbeekstraat 48, 3500 Hasselt", "btw": "BE0820.280.795", "notitie": "", "onfactId": "1707078", "volgnummer": "B00594"}, {"id": "onfact_1734771", "naam": "Ambert BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Havermarkt 7-9, 3500 Hasselt", "btw": "BE0893922306", "notitie": "", "onfactId": "1734771", "volgnummer": "B00595"}, {"id": "onfact_1782646", "naam": "Maes, Bram", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Plantenstraat 89, 3500 Hasselt", "btw": "BE0789652650", "notitie": "", "onfactId": "1782646", "volgnummer": "B00596"}, {"id": "onfact_1792157", "naam": "Parmentier, Shari", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Onledemeersstraat 29, 8800 Roeselare", "btw": "BE0715990355", "notitie": "", "onfactId": "1792157", "volgnummer": "B00597"}, {"id": "onfact_1802129", "naam": "Hulshagen, Ingrid", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Diestersteenweg 351, 3510 Hasselt", "btw": "BE0696496226", "notitie": "", "onfactId": "1802129", "volgnummer": "B00598"}, {"id": "onfact_1838819", "naam": "Architektuur En Interieurburo Toon Lindelauf BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Waterstraat 64, 3740 Bilzen", "btw": "BE0448.264.615", "notitie": "", "onfactId": "1838819", "volgnummer": "B00599"}, {"id": "onfact_1873805", "naam": "Qoral Advocaten BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Kunstlaan 10, 3500 Hasselt", "btw": "BE0770.366.278", "notitie": "", "onfactId": "1873805", "volgnummer": "B00600"}, {"id": "onfact_1873815", "naam": "Bogaerts, Timo", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Sint-Katarinaplein 12/13, 3500 Hasselt", "btw": "BE0758.981.349", "notitie": "", "onfactId": "1873815", "volgnummer": "B00601"}, {"id": "onfact_1887946", "naam": "LORMANS MANAGEMENT", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Keizel 40, 3590 Diepenbeek", "btw": "BE0864.039.772", "notitie": "", "onfactId": "1887946", "volgnummer": "B00602"}, {"id": "onfact_1932851", "naam": "Doven, Brandon", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Statiestraat 19, 9180 Moerbeke (Waas)", "btw": "BE1005.842.488", "notitie": "", "onfactId": "1932851", "volgnummer": "B00603"}, {"id": "onfact_2007335", "naam": "Flyinsite VOF", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Lily Boeykenslaan 13, 3530 Houthalen-Helchteren", "btw": "BE0632573622", "notitie": "", "onfactId": "2007335", "volgnummer": "B00604"}, {"id": "onfact_2028863", "naam": "Ortho Dusart BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Kolonel Dusartplein 1C, 3500 Hasselt", "btw": "", "notitie": "", "onfactId": "2028863", "volgnummer": "C00605"}, {"id": "onfact_2031556", "naam": "Calident BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Alkerstraat 31, 3570 Alken", "btw": "BE1010.133.650", "notitie": "", "onfactId": "2031556", "volgnummer": "B00606"}, {"id": "onfact_2032414", "naam": "Waterkant BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Alkerstraat 31, 3570 Alken", "btw": "BE1005115582", "notitie": "", "onfactId": "2032414", "volgnummer": "B00607"}, {"id": "onfact_2047766", "naam": "Optiek Roes (Roes, Denis)", "contactpersoon": "", "email": "", "telefoon": "036469643", "adres": "Jagersdreef 3, 2950 Kapellen", "btw": "BE0503458011", "notitie": "", "onfactId": "2047766", "volgnummer": "B00608"}, {"id": "onfact_2066030", "naam": "Steto BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Vismarkt (C) 28, 3980 Tessenderlo", "btw": "BE0806.463.245", "notitie": "", "onfactId": "2066030", "volgnummer": "B00609"}, {"id": "onfact_2069731", "naam": "EMARI", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Oeverstraat 7, 3500 Hasselt", "btw": "BE0770.929.670", "notitie": "", "onfactId": "2069731", "volgnummer": "B00610"}, {"id": "onfact_2074578", "naam": "Dufour Kristel", "contactpersoon": "", "email": "", "telefoon": "", "adres": "", "btw": "", "notitie": "", "onfactId": "2074578", "volgnummer": "C00611"}, {"id": "onfact_2156655", "naam": "Optiek Tim BV", "contactpersoon": "", "email": "tim\u0040optiektim.be", "telefoon": "026579761", "adres": "Brusselsesteenweg 501, 3090 Overijse", "btw": "BE1003083928", "notitie": "", "onfactId": "2156655", "volgnummer": "B00612"}, {"id": "onfact_2158020", "naam": "Vaja BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Pietelbeekstraat 5, 3500 Hasselt", "btw": "BE0866.530.395", "notitie": "", "onfactId": "2158020", "volgnummer": "B00613"}, {"id": "onfact_2168926", "naam": "Van Damme, Baudouin", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Pater Valentinuslaan 11/1.01, 3500 Hasselt", "btw": "BE0707.083.577", "notitie": "", "onfactId": "2168926", "volgnummer": "B00614"}, {"id": "onfact_2199044", "naam": "Nax Beheer BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Pater Valentinuslaan 18, 3500 Hasselt", "btw": "BE0480.428.330", "notitie": "", "onfactId": "2199044", "volgnummer": "B00615"}, {"id": "onfact_2254890", "naam": "Commv Waf", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Runksterkiezel 95, 3511 Hasselt", "btw": "BE0775.317.139", "notitie": "", "onfactId": "2254890", "volgnummer": "B00616"}, {"id": "onfact_2300659", "naam": "Zakenkantoor Castermans BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Lazarijstraat 156/11, 3500 Hasselt", "btw": "BE0437286886", "notitie": "", "onfactId": "2300659", "volgnummer": "B00617"}, {"id": "onfact_2320470", "naam": "Thuisverpleging Vangeneugden", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Grotstraat 5, 3690 Zutendaal", "btw": "BE0735.889.015", "notitie": "", "onfactId": "2320470", "volgnummer": "B00618"}, {"id": "onfact_2359969", "naam": "Commv Het Kadootje", "contactpersoon": "", "email": "", "telefoon": "", "adres": "de Stockheimlaan 9, 3510 Hasselt", "btw": "BE0773806909", "notitie": "", "onfactId": "2359969", "volgnummer": "B00619"}, {"id": "onfact_2405625", "naam": "Commv Aksioma", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Oude God 16, 3621 Lanaken", "btw": "BE1003.620.002", "notitie": "", "onfactId": "2405625", "volgnummer": "B00620"}, {"id": "onfact_2428801", "naam": "Comm.v Adviseren Begeleiden Calculeren Van Elektrische Projecten", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Maastrichtersteenweg 177/2, 3500 Hasselt", "btw": "BE0536.297.162", "notitie": "", "onfactId": "2428801", "volgnummer": "B00621"}, {"id": "onfact_2433591", "naam": "GTEK Solutions BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Vuurkruisenlaan 3, 3500 Hasselt", "btw": "BE1018.856.326", "notitie": "", "onfactId": "2433591", "volgnummer": "B00622"}, {"id": "onfact_2494664", "naam": "Daenen, Maria", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Verhenis 2, 3700 Tongeren-Borgloon", "btw": "BE0537.708.117", "notitie": "", "onfactId": "2494664", "volgnummer": "B00623"}, {"id": "onfact_2498890", "naam": "Gkc VOF", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Noordstraat 12, 8301 Knokke-Heist", "btw": "BE0477.065.794", "notitie": "", "onfactId": "2498890", "volgnummer": "B00624"}, {"id": "onfact_2498938", "naam": "B-cool BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Sint-Lambrechts-Herkstraat 26, 3500 Hasselt", "btw": "BE0540.683.839", "notitie": "", "onfactId": "2498938", "volgnummer": "B00625"}, {"id": "onfact_2509958", "naam": "Martens Lux", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Rue de Clopp 1, L-4810 Rodange", "btw": "LU23611385", "notitie": "", "onfactId": "2509958", "volgnummer": "B00626"}, {"id": "onfact_2536955", "naam": "Cataud BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Breughellaan 2, 3500 Hasselt", "btw": "BE0699.815.012", "notitie": "", "onfactId": "2536955", "volgnummer": "B00627"}, {"id": "onfact_2538397", "naam": "Optiek Oosterbosch", "contactpersoon": "", "email": "", "telefoon": "0487 20 99 70", "adres": "Sint-Hubertusplein 21, 3500 Hasselt", "btw": "", "notitie": "", "onfactId": "2538397", "volgnummer": "C00628"}, {"id": "onfact_2546180", "naam": "Dr An Hulshagen BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Hollandsveldlaan 3, 3500 Hasselt", "btw": "BE0680.852.205", "notitie": "", "onfactId": "2546180", "volgnummer": "B00629"}, {"id": "onfact_2551118", "naam": "Dr. Laura Nailis BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Merellaan 36, 3570 Alken", "btw": "BE0698.670.115", "notitie": "", "onfactId": "2551118", "volgnummer": "B00630"}, {"id": "onfact_2639077", "naam": "Optiek Salmon VOF", "contactpersoon": "", "email": "info\u0040optieksalmon.be", "telefoon": "011918034", "adres": "Grote Steenweg 80, 3440 Zoutleeuw", "btw": "BE0734804395", "notitie": "", "onfactId": "2639077", "volgnummer": "B00631"}, {"id": "onfact_2738355", "naam": "Optiglass BV", "contactpersoon": "", "email": "accounting\u0040optieklemmer.be", "telefoon": "", "adres": "Sint-Katarinaplein 21, 3500 Hasselt", "btw": "BE0898365894", "notitie": "", "onfactId": "2738355", "volgnummer": "B00632"}, {"id": "onfact_2777444", "naam": "Ozdi", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Notelarenstraat 9, 3500 Hasselt", "btw": "BE1007.508.910", "notitie": "", "onfactId": "2777444", "volgnummer": "B00633"}, {"id": "onfact_2796173", "naam": "Raymaekers, Sabine", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Riksingenstraat 37, 3700 Tongeren-Borgloon", "btw": "BE0882.049.803", "notitie": "", "onfactId": "2796173", "volgnummer": "B00634"}, {"id": "onfact_2821938", "naam": "Peten Lotte", "contactpersoon": "", "email": "", "telefoon": "", "adres": "", "btw": "", "notitie": "", "onfactId": "2821938", "volgnummer": "C00635"}, {"id": "onfact_2879167", "naam": "Studio M. Bertels BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Roode Roosstraat 8, 3500 Hasselt", "btw": "BE0465.437.276", "notitie": "", "onfactId": "2879167", "volgnummer": "B00636"}, {"id": "onfact_2915352", "naam": "Optiek Withofs BV", "contactpersoon": "", "email": "info\u0040optiekwithofs.be", "telefoon": "011635689", "adres": "Steenweg Wijchmaal 10/1, 3990 Peer", "btw": "BE0466945132", "notitie": "", "onfactId": "2915352", "volgnummer": "B00637"}, {"id": "onfact_2937808", "naam": "Nota Bene Communicatiebureau BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Vertakking 6, 3520 Zonhoven", "btw": "BE0878.559.583", "notitie": "", "onfactId": "2937808", "volgnummer": "B00638"}, {"id": "onfact_3172149", "naam": "Pulinx, Marleen", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Kapelhofstraat 26, 3500 Hasselt", "btw": "BE0696.302.622", "notitie": "", "onfactId": "3172149", "volgnummer": "B00639"}, {"id": "onfact_3312084", "naam": "Traiteur Nico Fruit BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Maastrichtersteenweg 153, 3500 Hasselt", "btw": "BE0507.769.561", "notitie": "", "onfactId": "3312084", "volgnummer": "B00640"}, {"id": "onfact_3387154", "naam": "Spaas, Johan", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Justus Lipsiuslaan 7, 3500 Hasselt", "btw": "BE0801.872.076", "notitie": "", "onfactId": "3387154", "volgnummer": "B00641"}, {"id": "onfact_3417759", "naam": "Gybels, Elke", "contactpersoon": "", "email": "", "telefoon": "", "adres": "O.L. Vrouwstraat 133, 3550 Heusden-Zolder", "btw": "BE0813.233.350", "notitie": "", "onfactId": "3417759", "volgnummer": "B00642"}, {"id": "onfact_3675010", "naam": "Semper Excelsius BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Casterstraat 51, 3500 Hasselt", "btw": "BE1000.708.913", "notitie": "", "onfactId": "3675010", "volgnummer": "B00643"}, {"id": "onfact_3675058", "naam": "Varga, DÉ³ra", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Mierhoopweg 35, 3850 Nieuwerkerken", "btw": "BE0700.316.937", "notitie": "", "onfactId": "3675058", "volgnummer": "B00644"}, {"id": "onfact_3752042", "naam": "Cobalt Optical Frames NV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Zogge 39, 9220 Hamme (Vl.)", "btw": "BE0449.197.991", "notitie": "", "onfactId": "3752042", "volgnummer": "B00645"}, {"id": "onfact_3759918", "naam": "Koster It BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Nobelstraat 38, 3128 Tremelo", "btw": "BE0797.666.929", "notitie": "", "onfactId": "3759918", "volgnummer": "B00646"}, {"id": "onfact_3760333", "naam": "Maes, Bram", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Tomstraat 27, 3500 Hasselt", "btw": "BE0789.652.650", "notitie": "", "onfactId": "3760333", "volgnummer": "B00647"}, {"id": "onfact_3760375", "naam": "DR. ISABELLE LAUWERS", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Wildekastanjelaan 13, 3600 Genk", "btw": "BE1019.986.870", "notitie": "", "onfactId": "3760375", "volgnummer": "B00648"}, {"id": "onfact_3831053", "naam": "Srl Binoptics (Nooz Hasselt)", "contactpersoon": "", "email": "hasselt\u0040nooz-optics.com", "telefoon": "011760594", "adres": "Chaussée de La Hulpe 150, 1170 Watermael-Boitsfort", "btw": "BE0543753789", "notitie": "", "onfactId": "3831053", "volgnummer": "B00649"}, {"id": "onfact_3843959", "naam": "Punie, Geoffrey", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Stokstraat 30, 3800 Sint-Truiden", "btw": "BE0641.511.676", "notitie": "", "onfactId": "3843959", "volgnummer": "B00650"}, {"id": "onfact_3865532", "naam": "Punie, Geoffrey", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Stokstraat 30, 3800 Sint-Truiden", "btw": "BE0641511676", "notitie": "", "onfactId": "3865532", "volgnummer": "B00651"}, {"id": "onfact_3869332", "naam": "Dr.kerssebeeck-dr.berends BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Nieuwe steenweg 38, 3500 Hasselt", "btw": "BE0898.434.784", "notitie": "", "onfactId": "3869332", "volgnummer": "B00652"}, {"id": "onfact_3895425", "naam": "Bricksbuild BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Berkenlaan 59, 3500 Hasselt", "btw": "BE0776.638.220", "notitie": "", "onfactId": "3895425", "volgnummer": "B00653"}, {"id": "onfact_3941551", "naam": "Kvgreen Consulting BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Lutselusstraat 157, 3590 Diepenbeek", "btw": "BE0738.759.918", "notitie": "", "onfactId": "3941551", "volgnummer": "B00654"}, {"id": "onfact_3968767", "naam": "Value BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Lazarijstraat 156/1.03, 3500 Hasselt", "btw": "BE0871.537.476", "notitie": "", "onfactId": "3968767", "volgnummer": "B00655"}, {"id": "onfact_3984513", "naam": "Vandewal, Niki", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Winkelstraat 1/F000, 3720 Hasselt", "btw": "BE1022.693.368", "notitie": "", "onfactId": "3984513", "volgnummer": "B00656"}, {"id": "onfact_3992396", "naam": "Ethel BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Oude Luikerbaan 95, 3500 Hasselt", "btw": "BE0726.745.675", "notitie": "", "onfactId": "3992396", "volgnummer": "B00657"}, {"id": "onfact_4008820", "naam": "Vandewal, Niki", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Winkelstraat 1/F000, 3720 Hasselt", "btw": "BE1022.693.368", "notitie": "", "onfactId": "4008820", "volgnummer": "B00658"}, {"id": "onfact_4026557", "naam": "Ryco Horeca BV", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Heldenplein 10, 3500 Hasselt", "btw": "BE0788.280.495", "notitie": "", "onfactId": "4026557", "volgnummer": "B00659"}, {"id": "onfact_4036276", "naam": "Wu, Ailie", "contactpersoon": "", "email": "", "telefoon": "", "adres": "Kiezelstraat 179/1, 3500 Hasselt", "btw": "BE1029.603.233", "notitie": "", "onfactId": "4036276", "volgnummer": "B00660"}];
+
+// Laad jobs en clients uit Supabase
+async function laadJobs() {
+  const statusEl = document.getElementById('laad-status');
+  if (statusEl) { statusEl.textContent = 'Laden...'; statusEl.style.display = 'block'; }
+  try {
+    // Laad jobs
+    const jobRes = await fetch(SUPABASE_URL + '/rest/v1/jobs?select=*&limit=1000', {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+    });
+    const jobData = await jobRes.json();
+    // Supabase slaat op als {id, data: {...}} — haal de inner data op maar bewaar het id
+    alleJobs = jobData.map(r => {
+      const j = r.data || r;
+      if (!j.id && r.id) j.id = r.id;
+      return j;
+    }).filter(j => j && j.type && j.type !== 'Verzending');
+
+    // Laad clients: ingebakken database + nieuwe klanten uit Supabase
+    alleClients = [...CLIENTS_DB];
+    try {
+      const clRes = await fetch(SUPABASE_URL + '/rest/v1/clients_custom?select=*&limit=1000', {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+      });
+      const clData = await clRes.json();
+      const extraClients = clData.map(r => r.data || r).filter(Boolean);
+      // Voeg toe als ze nog niet in de database zitten
+      extraClients.forEach(function(c) {
+        if (!alleClients.find(x => x.id === c.id)) {
+          alleClients.push(c);
+        }
+      });
+      if (extraClients.length) console.log('Extra clients geladen:', extraClients.length);
+    } catch(e) {
+      console.log('Geen extra clients geladen:', e.message);
+    }
+
+    if (statusEl) statusEl.style.display = 'none';
+    console.log('Geladen:', alleJobs.length, 'jobs,', alleClients.length, 'clients');
+    toonRecente();
+  } catch(e) {
+    if (statusEl) { statusEl.textContent = 'Laden mislukt — controleer verbinding'; }
+    console.error('Laden mislukt:', e);
+  }
+}
+
+function clientNaam(clientId) {
+  const c = alleClients.find(c => c.id === clientId);
+  return c ? c.naam : '';
+}
+
+// Tab wisselen
+let actieveTab = 'ob';
+function setZoekTab(tab) {
+  actieveTab = tab;
+  document.getElementById('zoek-ob-wrap').style.display = tab === 'ob' ? 'block' : 'none';
+  document.getElementById('zoek-naam-wrap').style.display = tab === 'naam' ? 'block' : 'none';
+  // Tabs stylen
+  const tabOb = document.getElementById('tab-ob');
+  const tabNaam = document.getElementById('tab-naam');
+  tabOb.style.background = tab === 'ob' ? 'white' : 'transparent';
+  tabOb.style.color = tab === 'ob' ? '#1e3a5f' : '#718096';
+  tabOb.style.boxShadow = tab === 'ob' ? '0 1px 3px rgba(0,0,0,.1)' : 'none';
+  tabNaam.style.background = tab === 'naam' ? 'white' : 'transparent';
+  tabNaam.style.color = tab === 'naam' ? '#1e3a5f' : '#718096';
+  tabNaam.style.boxShadow = tab === 'naam' ? '0 1px 3px rgba(0,0,0,.1)' : 'none';
+  // Reset
+  resetZoek();
+}
+
+function resetZoek() {
+  huidigJobId = null;
+  document.getElementById('job-info').className = 'job-info';
+  document.getElementById('job-niet-gevonden').className = 'job-niet-gevonden';
+  document.getElementById('foto-card').style.display = 'none';
+  document.getElementById('naam-resultaten').style.display = 'none';
+  fotoVoor = null; fotoNa = null;
+  toonFotoInVak('voor', null); toonFotoInVak('na', null);
+  updateKnop();
+}
+
+// Zoek op klantnaam
+let naamTimer = null;
+function zoekOpNaam(val) {
+  clearTimeout(naamTimer);
+  const resultEl = document.getElementById('naam-resultaten');
+  if (!val || val.length < 2) { resultEl.style.display = 'none'; resetZoek(); return; }
+
+  naamTimer = setTimeout(function() {
+    const clients = alleClients;
+    const zoekLower = val.toLowerCase();
+
+    // Vind matching clients
+    const matchClients = clients.filter(c =>
+      (c.naam||'').toLowerCase().includes(zoekLower)
+    ).slice(0, 8);
+
+    if (!matchClients.length) {
+      resultEl.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px 0;">Geen klanten gevonden</div>';
+      resultEl.style.display = 'block';
+      return;
+    }
+
+    resultEl.style.display = 'block';
+    resultEl.innerHTML = matchClients.map(c => {
+      // Vind jobs van deze klant
+      const clientJobs = alleJobs.filter(j => j.clientId === c.id && j.orderbon)
+        .sort((a,b) => (b.datum||'').localeCompare(a.datum||''))
+        .slice(0, 5);
+
+      return '<div class="naam-resultaat">'
+        + '<div class="naam-resultaat-klant">' + c.naam + '</div>'
+        + '<div class="naam-resultaat-jobs">'
+          + (clientJobs.length
+            ? clientJobs.map(j =>
+                '<span class="naam-resultaaselecteerJobId(\'' + j.id + '\')">'
+                + j.orderbon + '</span>'
+              ).join('')
+            : '<span style="color:var(--muted);">Geen opdrachten</span>'
+          )
+        + '</div>'
+      + '</div>';
+    }).join('');
+  }, 250);
+}
+
+function selecteerJobId(jobId) {
+  const job = alleJobs.find(j => j.id === jobId);
+  if (!job || !job.orderbon) return;
+  // Wissel naar orderbon tab en vul in
+  setZoekTab('ob');
+  const input = document.getElementById('zoek-ob-input');
+  input.value = job.orderbon;
+  zoekJob(job.orderbon);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Zoek job op orderbonnummer
+let zoekTimer = null;
+function zoekJob(val) {
+  clearTimeout(zoekTimer);
+  val = val.trim().toUpperCase();
+  const infoEl = document.getElementById('job-info');
+  const nfEl = document.getElementById('job-niet-gevonden');
+  const fotoCard = document.getElementById('foto-card');
+
+  if (!val || val.length < 3) {
+    infoEl.className = 'job-info';
+    nfEl.className = 'job-niet-gevonden';
+    fotoCard.style.display = 'none';
+    huidigJobId = null;
+    updateKnop();
+    return;
+  }
+
+  zoekTimer = setTimeout(function() {
+    // Zoek op orderbon nummer
+    const job = alleJobs.find(j =>
+      (j.orderbon||'').toUpperCase() === val ||
+      (j.orderbon||'').toUpperCase().includes(val)
+    );
+
+    if (job) {
+      huidigJobId = job.id;
+      document.getElementById('job-naam').textContent = job.beschrijving || '—';
+      const clientN = clientNaam(job.clientId);
+      document.getElementById('job-meta').textContent =
+        (clientN ? clientN + ' · ' : '') + (job.orderbon || '') + ' · ' + (job.datum || '');
+      infoEl.className = 'job-info zichtbaar';
+      nfEl.className = 'job-niet-gevonden';
+      fotoCard.style.display = 'block';
+
+      // Laad bestaande foto's
+      fotoVoor = job.fotoVoor || null;
+      fotoNa = job.fotoNa || null;
+      toonFotoInVak('voor', fotoVoor);
+      toonFotoInVak('na', fotoNa);
+      updateKnop();
+    } else {
+      huidigJobId = null;
+      infoEl.className = 'job-info';
+      nfEl.className = 'job-niet-gevonden zichtbaar';
+      fotoCard.style.display = 'none';
+      updateKnop();
+    }
+  }, 300);
+}
+
+function kiesFoto(type) {
+  fotoTarget = type;
+  const input = document.getElementById('file-input');
+  input.value = '';
+  input.click();
+}
+
+function verwerkFoto(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      const maxW = 1200;
+      const scale = img.width > maxW ? maxW / img.width : 1;
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      const base64 = canvas.toDataURL('image/jpeg', 0.75);
+      if (fotoTarget === 'voor') fotoVoor = base64;
+      else fotoNa = base64;
+      toonFotoInVak(fotoTarget, base64);
+      updateKnop();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function toonFotoInVak(type, base64) {
+  const vak = document.getElementById('vak-' + type);
+  const img = document.getElementById('img-' + type);
+  if (base64) {
+    img.src = base64;
+    img.style.display = 'block';
+    vak.classList.add('heeft-foto');
+  } else {
+    img.src = '';
+    img.style.display = 'none';
+    vak.classList.remove('heeft-foto');
+  }
+}
+
+function verwijderFoto(event, type) {
+  event.stopPropagation();
+  if (type === 'voor') fotoVoor = null;
+  else fotoNa = null;
+  toonFotoInVak(type, null);
+  updateKnop();
+}
+
+function updateKnop() {
+  const btn = document.getElementById('btn-opslaan');
+  btn.disabled = !huidigJobId || (!fotoVoor && !fotoNa);
+}
+
+async function opslaan() {
+  if (!huidigJobId) return;
+  const btn = document.getElementById('btn-opslaan');
+  const statusEl = document.getElementById('status');
+
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> Opslaan...';
+  statusEl.className = 'status bezig';
+  statusEl.textContent = 'Foto\'s worden opgeslagen...';
+
+  try {
+    // Haal huidige job op
+    const res = await fetch(SUPABASE_URL + '/rest/v1/jobs?id=eq.' + huidigJobId, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+    });
+    const rows = await res.json();
+    if (!rows.length) throw new Error('Job niet gevonden');
+
+    const job = rows[0].data || rows[0];
+    job.fotoVoor = fotoVoor;
+    job.fotoNa = fotoNa;
+
+    // Sla op
+    const saveRes = await fetch(SUPABASE_URL + '/rest/v1/jobs?id=eq.' + huidigJobId, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ data: job })
+    });
+
+    if (!saveRes.ok) throw new Error('Opslaan mislukt: ' + saveRes.status);
+
+    // Succes
+    btn.className = 'btn-opslaan succes';
+    btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Opgeslagen!';
+    statusEl.className = 'status ok';
+    statusEl.textContent = 'Foto\'s zijn opgeslagen en zichtbaar in de cockpit.';
+
+    // Update lokale cache
+    const idx = alleJobs.findIndex(j => j.id === huidigJobId);
+    if (idx !== -1) { alleJobs[idx].fotoVoor = fotoVoor; alleJobs[idx].fotoNa = fotoNa; }
+    toonRecente();
+
+    // Reset na 2 seconden
+    setTimeout(function() {
+      btn.className = 'btn-opslaan';
+      btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Foto\'s opslaan';
+      btn.disabled = false;
+      statusEl.className = 'status';
+      statusEl.textContent = '';
+    }, 2500);
+
+  } catch(e) {
+    btn.className = 'btn-opslaan';
+    btn.innerHTML = 'Probeer opnieuw';
+    btn.disabled = false;
+    statusEl.className = 'status fout';
+    statusEl.textContent = 'Fout: ' + e.message;
+    console.error(e);
+  }
+}
+
+function toonRecente() {
+  const metFotos = alleJobs.filter(j => j.fotoVoor || j.fotoNa)
+    .sort((a,b) => (b.datum||'').localeCompare(a.datum||''))
+    .slice(0, 5);
+
+  const card = document.getElementById('recente-card');
+  const lijst = document.getElementById('recente-lijst');
+
+  if (!metFotos.length) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+
+  const clients = alleClients;
+  lijst.innerHTML = metFotos.map(j => {
+    const cl = clients.find(c => c.id === j.clientId);
+    return '<div class="recente-job" onclick="selecteerJob(\'' + j.orderbon + '\')">'
+      + '<div class="rj-ob">' + (j.orderbon || '—') + '</div>'
+      + '<div class="rj-naam">' + (j.beschrijving || (cl ? cl.naam : '—')).substring(0, 30) + '</div>'
+      + '<div class="rj-fotos">'
+        + (j.fotoVoor ? '<img src="' + j.fotoVoor + '">' : '')
+        + (j.fotoNa ? '<img src="' + j.fotoNa + '">' : '')
+      + '</div>'
+    + '</div>';
+  }).join('');
+}
+
+function selecteerJob(orderbon) {
+  setZoekTab('ob');
+  const input = document.getElementById('zoek-ob-input');
+  input.value = orderbon;
+  zoekJob(orderbon);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Start
+laadJobs();
+</script>
+</body>
+</html>
