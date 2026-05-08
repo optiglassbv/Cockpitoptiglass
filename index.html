@@ -3256,12 +3256,10 @@ function renderJobs() {
     ? jobs.filter(j => j.clientId === jobFilterClientId && j.type !== 'Verzending')
     : jobs.filter(j => j.type !== 'Verzending');
 
-  // Verberg gefactureerde en "wacht facturatie" tenzij checkbox aan
+  // Verberg alles behalve "Wacht" en "In behandeling" tenzij checkbox aan
   if (!toonGefactureerd) {
     filtered = filtered.filter(j => 
-      j.status !== 'Gefactureerd' && 
-      j.status !== 'Wacht facturatie' && 
-      !j.gefactureerd
+      j.status === 'Wacht' || j.status === 'In behandeling'
     );
   }
 
@@ -4723,6 +4721,25 @@ function nogEenOpdracht() {
 
   // Bewaar de klant
   qSelectedClientId = savedClientId;
+
+  // Scroll naar boven - de .modal div heeft overflow-y:auto
+  const modalDiv = document.querySelector('#quick-job-modal .modal');
+  if (modalDiv) {
+    modalDiv.scrollTop = 0;
+    modalDiv.scrollTo({ top: 0, behavior: 'instant' });
+  }
+  // Ook de stap zelf scrollen
+  const activeStep = document.getElementById('qstep-1');
+  if (activeStep) activeStep.scrollTop = 0;
+
+  // Toon klant correct in stap 2
+  const c = clientById(savedClientId);
+  const selEl = document.getElementById('q-selected-client');
+  if (selEl && c) selEl.textContent = c.naam;
+  const selCard = document.getElementById('qclient-selected');
+  if (selCard) selCard.classList.remove('hidden');
+  const searchEl = document.getElementById('qclient-search');
+  if (searchEl) searchEl.value = '';
 
   goQStep(1);
 }
