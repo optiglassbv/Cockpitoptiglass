@@ -3306,7 +3306,8 @@ function renderJobs() {
   const renderKaart = function(j) {
     const c = clientById(j.clientId);
     const kleur = sk(j.status);
-    return '<div class="card" style="margin-bottom:8px;padding:10px 14px;cursor:pointer;" id="jobkaart-' + j.id + '" onclick="toonJobDetail(\'' + j.id + '\')">'
+    return '<div class="card" style="margin-bottom:8px;padding:10px 14px;cursor:pointer;position:relative;" id="jobkaart-' + j.id + '" onclick="toonJobDetail(\'' + j.id + '\')">'
+      + '<button class="job-del-btn" onclick="event.stopPropagation();deleteJob(\'' + j.id + '\')" title="Verwijder werkopdracht" style="position:absolute;top:6px;right:6px;width:24px;height:24px;border:none;background:transparent;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-muted);opacity:.55;transition:all .15s;" onmouseover="this.style.opacity=1;this.style.background=\'var(--red-soft)\';this.style.color=\'var(--red)\'" onmouseout="this.style.opacity=.55;this.style.background=\'transparent\';this.style.color=\'var(--text-muted)\'"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>'
       + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">'
         + '<div style="flex:1;min-width:0;">'
           + '<div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (j.beschrijving||'—') + '</div>'
@@ -3500,7 +3501,7 @@ function deleteJob(id) {
   renderJobs();
   // Verwijder ook uit Supabase cloud
   sbFetch('jobs', 'DELETE', null, id).catch(function() {});
-  showToast('Verwijderd', 'error');
+  showToast('Werkopdracht verwijderd');
 }
 
 function updateJobStatus(id, status) {
