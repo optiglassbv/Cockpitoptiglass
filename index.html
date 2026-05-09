@@ -2028,7 +2028,7 @@ function deleteTarief(id) {
   tarieven = tarieven.filter(t => t.id !== id);
   saveTarieven();
   renderTarieven();
-  showToast('Tarief verwijderd', 'error');
+  showToast('Tarief verwijderd');
 }
 
 // ── LOGIN (UITGESCHAKELD - DEMO) ─────────────────────────────────────────────
@@ -2158,6 +2158,7 @@ async function doBiometricLogin() {
       document.getElementById('app-container').style.display = 'block';
       applyRolePermissions(found.rol);
       laadNumeringUitCloud();
+      laadSettingsUitCloud();
       if (found.rol === 'admin') showTab('dashboard');
       else showTab('jobs');
     } else {
@@ -2803,6 +2804,7 @@ function generateObNummer() {
   // Increment for next time
   s.obNummer = nr + 1;
   localStorage.setItem('og_nummering', JSON.stringify(s));
+  syncNummering(s);
   return bon;
 }
 
@@ -2815,6 +2817,7 @@ function generateLbNummer() {
   // Increment for next time
   s.lbNummer = nr + 1;
   localStorage.setItem('og_nummering', JSON.stringify(s));
+  syncNummering(s);
   return bon;
 }
 
@@ -3209,7 +3212,7 @@ function confirmDelete() {
   clients = clients.filter(c=>c.id!==deleteTargetId);
   jobs = jobs.filter(j=>j.clientId!==deleteTargetId);
   saveData(); closeModal('delete-modal'); renderClients();
-  showToast('Klant verwijderd', 'error');
+  showToast('Klant verwijderd');
 }
 
 // ── JOBS ─────────────────────────────────────────────────────────────────────
@@ -3487,7 +3490,7 @@ async function wisAlleOpdrachten() {
   saveData();
   renderJobs();
   renderDashboard();
-  showToast('Alle opdrachten verwijderd ✓', 'error');
+  showToast('Alle opdrachten verwijderd ✓');
 }
 
 function deleteJob(id) {
@@ -4722,15 +4725,11 @@ function nogEenOpdracht() {
   // Bewaar de klant
   qSelectedClientId = savedClientId;
 
-  // Scroll naar boven - de .modal div heeft overflow-y:auto
-  const modalDiv = document.querySelector('#quick-job-modal .modal');
-  if (modalDiv) {
-    modalDiv.scrollTop = 0;
-    modalDiv.scrollTo({ top: 0, behavior: 'instant' });
-  }
-  // Ook de stap zelf scrollen
-  const activeStep = document.getElementById('qstep-1');
-  if (activeStep) activeStep.scrollTop = 0;
+  // Scroll naar boven
+  const modal = document.querySelector('#quick-job-modal .modal');
+  if (modal) modal.scrollTop = 0;
+  const overlay = document.getElementById('quick-job-modal');
+  if (overlay) overlay.scrollTop = 0;
 
   // Toon klant correct in stap 2
   const c = clientById(savedClientId);
@@ -5103,7 +5102,7 @@ function showResult(el, type, msg) {
   };
   const c = colors[type] || colors.loading;
   el.style.cssText = `display:block;padding:7px 12px;border-radius:8px;font-size:12px;background:${c.bg};border:1px solid ${c.border};color:${c.color};`;
-  el.textContent = msg;
+  el.innerHTML = msg;
 }
 
 // ── LEVERINGSBON ─────────────────────────────────────────────────────────────
@@ -5571,108 +5570,6 @@ function toggleInvoiceBon(e, bon) {
 }
 
 
-function saveData() {
-  localStorage.setItem('og_clients', JSON.stringify(clients));
-  localStorage.setItem('og_jobs', JSON.stringify(jobs));
-  // Auto-sync naar cloud — fire and track
-  syncToSupabase(true);
-}
-
-// ── TARIEVEN ─────────────────────────────────────────────────────────────────
-
-function saveTarieven() {
-  localStorage.setItem('og_tarieven', JSON.stringify(tarieven));
-}
-
-function getTariefByNaam(naam) {
-  return tarieven.find(t => t.naam.toLowerCase() === naam.toLowerCase());
-}
-
-function getTarievenByCategorie(cat) {
-  return tarieven.filter(t => t.categorie === cat);
-}
-
-function renderTarieven() {
-  ['Herstelling','Montage','Verzending'].forEach(cat => {
-    const items = getTarievenByCategorie(cat);
-    const colors = { Herstelling: 'var(--orange)', Montage: 'var(--purple)', Verzending: 'var(--accent)' };
-    const elId = 'tarieven-' + cat.toLowerCase();
-    const el = document.getElementById(elId);
-    if (!el) return;
-    if (items.length === 0) {
-      el.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:10px 0;">Nog geen tarieven.</div>';
-      return;
-    }
-    el.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:13px;">' +
-      '<thead><tr>' +
-        '<th style="text-align:left;padding:6px 10px;border-bottom:1px solid var(--border);font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;">Naam</th>' +
-        '<th style="text-align:left;padding:6px 10px;border-bottom:1px solid var(--border);font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;">Beschrijving</th>' +
-        '<th style="text-align:right;padding:6px 10px;border-bottom:1px solid var(--border);font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;">Prijs</th>' +
-        '<th style="padding:6px 10px;border-bottom:1px solid var(--border);"></th>' +
-      '</tr></thead><tbody>' +
-      items.map(t => '<tr style="border-bottom:1px solid var(--border)22;">' +
-        '<td style="padding:10px;font-weight:600;">' + t.naam + '</td>' +
-        '<td style="padding:10px;color:var(--text-muted);font-size:12px;">' + (t.beschrijving||'') + '</td>' +
-        '<td style="padding:10px;text-align:right;font-weight:700;">' + (t.gratis ? '<span style="color:var(--green)">GRATIS</span>' : fmtEuro(t.prijs)) + '</td>' +
-        '<td style="padding:10px;">' +
-          '<div class="flex-gap">' +
-            '<button class="btn btn-ghost btn-sm" onclick="openTariefModal(&quot;' + cat + '&quot;,&quot;' + t.id + '&quot;)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>' +
-            '<button class="btn btn-danger btn-sm" onclick="deleteTarief(&quot;' + t.id + '&quot;)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>' +
-          '</div>' +
-        '</td>' +
-      '</tr>').join('') +
-      '</tbody></table>';
-  });
-}
-
-function openTariefModal(categorie, id) {
-  const t = id ? tarieven.find(x => x.id === id) : null;
-  document.getElementById('tarief-modal-title').textContent = t ? 'Tarief bewerken' : 'Nieuw tarief';
-  document.getElementById('tarief-id').value = t?.id || '';
-  document.getElementById('tarief-categorie').value = t?.categorie || categorie || 'Herstelling';
-  document.getElementById('tarief-naam').value = t?.naam || '';
-  document.getElementById('tarief-beschrijving').value = t?.beschrijving || '';
-  document.getElementById('tarief-prijs').value = t?.prijs || '';
-  document.getElementById('tarief-gratis').checked = t?.gratis || false;
-  document.getElementById('tarief-prijs').disabled = t?.gratis || false;
-  document.getElementById('tarief-modal').classList.remove('hidden');
-}
-
-function toggleTariefGratis() {
-  const gratis = document.getElementById('tarief-gratis').checked;
-  document.getElementById('tarief-prijs').disabled = gratis;
-  if (gratis) document.getElementById('tarief-prijs').value = '0';
-}
-
-function saveTarief() {
-  const naam = document.getElementById('tarief-naam').value.trim();
-  if (!naam) { showToast('Naam is verplicht', 'error'); return; }
-  const id = document.getElementById('tarief-id').value || genId();
-  const gratis = document.getElementById('tarief-gratis').checked;
-  const t = {
-    id,
-    categorie: document.getElementById('tarief-categorie').value,
-    naam,
-    beschrijving: document.getElementById('tarief-beschrijving').value,
-    prijs: gratis ? 0 : (parseFloat(document.getElementById('tarief-prijs').value) || 0),
-    gratis,
-  };
-  const existing = tarieven.findIndex(x => x.id === id);
-  if (existing >= 0) tarieven[existing] = t;
-  else tarieven.push(t);
-  saveTarieven();
-  closeModal('tarief-modal');
-  renderTarieven();
-  showToast(existing >= 0 ? 'Tarief bijgewerkt' : 'Tarief toegevoegd');
-}
-
-function deleteTarief(id) {
-  if (!confirm('Tarief verwijderen?')) return;
-  tarieven = tarieven.filter(t => t.id !== id);
-  saveTarieven();
-  renderTarieven();
-  showToast('Tarief verwijderd', 'error');
-}
 
 // ── LOGIN (UITGESCHAKELD - DEMO) ─────────────────────────────────────────────
 
