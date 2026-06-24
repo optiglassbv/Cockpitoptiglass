@@ -564,12 +564,16 @@
       <!-- STATS -->
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:18px;">
         <div class="card" style="padding:12px 14px;text-align:center;">
-          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:4px;">Herstellingen</div>
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:4px;">Herstellingen deze maand</div>
           <div id="cd-stat-herstelling" style="font-size:24px;font-weight:700;color:var(--orange);">0</div>
         </div>
         <div class="card" style="padding:12px 14px;text-align:center;">
-          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:4px;">Montages</div>
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:4px;">Montages deze maand</div>
           <div id="cd-stat-montage" style="font-size:24px;font-weight:700;color:var(--purple);">0</div>
+        </div>
+        <div class="card" style="padding:12px 14px;text-align:center;">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:4px;">Omzet deze maand</div>
+          <div id="cd-stat-omzet-maand" style="font-size:24px;font-weight:700;color:var(--green);">€ 0</div>
         </div>
         <div class="card" style="padding:12px 14px;text-align:center;">
           <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:4px;">Open te factureren</div>
@@ -3893,16 +3897,29 @@ function renderClientDetail() {
 
   const herstellingen = alleJobs.filter(function(j) { return j.type === 'Herstelling'; });
   const montages = alleJobs.filter(function(j) { return j.type === 'Montage'; });
+  // Stats deze maand (reset bij elke nieuwe maand)
+  const nu = new Date();
+  const isDezeMaand = function(j) {
+    if (!j.datum) return false;
+    const d = new Date(j.datum);
+    return !isNaN(d) && d.getMonth() === nu.getMonth() && d.getFullYear() === nu.getFullYear();
+  };
+  const herstMaand = herstellingen.filter(isDezeMaand).length;
+  const montMaand = montages.filter(isDezeMaand).length;
+  const omzetMaand = alleJobs.filter(isDezeMaand).reduce(function(s,j) { return s + (Number(j.prijs)||0); }, 0);
   const openBedrag = alleJobs.filter(function(j) { return j.status === 'Wacht' || j.status === 'Wacht facturatie'; })
     .reduce(function(s,j) { return s + (Number(j.prijs)||0); }, 0);
   const gefactureerdBedrag = alleJobs.filter(function(j) { return j.gefactureerd; })
     .reduce(function(s,j) { return s + (Number(j.prijs)||0); }, 0);
   const lbSet = new Set(alleJobs.map(function(j) { return j.leveringsbon; }).filter(Boolean));
 
-  document.getElementById('cd-stat-herstelling').textContent = herstellingen.length;
-  document.getElementById('cd-stat-montage').textContent = montages.length;
+  document.getElementById('cd-stat-herstelling').textContent = herstMaand;
+  document.getElementById('cd-stat-montage').textContent = montMaand;
+  const omzetEl = document.getElementById('cd-stat-omzet-maand');
+  if (omzetEl) omzetEl.textContent = fmtEuro(omzetMaand);
   document.getElementById('cd-stat-open').textContent = fmtEuro(openBedrag);
   document.getElementById('cd-stat-gefactureerd').textContent = fmtEuro(gefactureerdBedrag);
+  // Tab-badges blijven het TOTAAL aantal tonen (alle opdrachten ooit voor deze klant)
   document.getElementById('cd-herstelling-count').textContent = herstellingen.length;
   document.getElementById('cd-montage-count').textContent = montages.length;
   document.getElementById('cd-lb-count').textContent = lbSet.size;
