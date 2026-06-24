@@ -436,6 +436,22 @@
           <canvas id="omzet-chart" style="width:100%;display:block;"></canvas>
         </div>
 
+        <!-- MAANDOVERZICHT -->
+        <div class="card" style="padding:0;overflow:hidden;margin-bottom:20px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--border);">
+            <div style="font-size:14px;font-weight:700;">Maandoverzicht <span id="maand-jaar-label" style="font-size:12px;color:var(--text-muted);font-weight:500;"></span></div>
+          </div>
+          <table style="width:100%;border-collapse:collapse;">
+            <thead><tr style="background:var(--surface-alt);">
+              <th style="padding:8px 18px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);">Maand</th>
+              <th style="padding:8px 12px;text-align:right;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--orange);">Herstellingen</th>
+              <th style="padding:8px 12px;text-align:right;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--purple);">Montages</th>
+              <th style="padding:8px 18px;text-align:right;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);">Omzet</th>
+            </tr></thead>
+            <tbody id="dashboard-maandoverzicht"></tbody>
+          </table>
+        </div>
+
         <!-- OPENSTAANDE LEVERINGSBONNEN -->
         <div class="card" style="padding:0;overflow:hidden;">
           <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--border);">
@@ -2954,14 +2970,20 @@ function renderDashboard() {
     const d = new Date(j.datum);
     return d.getMonth() === now.getMonth() && d.getFullYear() === thisYear;
   }).reduce((s,j) => s + (Number(j.prijs)||0), 0);
-  const herst = realJobs.filter(j => j.type === 'Herstelling').length;
-  const mont = realJobs.filter(j => j.type === 'Montage').length;
+  // Herstellingen + montages deze maand (resetten bij nieuwe maand)
+  const isDezeMaand = function(j) {
+    if (!j.datum) return false;
+    const d = new Date(j.datum);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === thisYear;
+  };
+  const herst = realJobs.filter(j => j.type === 'Herstelling' && isDezeMaand(j)).length;
+  const mont = realJobs.filter(j => j.type === 'Montage' && isDezeMaand(j)).length;
 
   document.getElementById('stats-grid').innerHTML = [
     { label: 'Open te factureren', value: fmtEuro(totalOpen), color: 'var(--accent)' },
     { label: 'Omzet deze maand',   value: fmtEuro(totalMonth), color: 'var(--green)' },
-    { label: 'Herstellingen',      value: herst,                color: 'var(--orange)' },
-    { label: 'Montages',           value: mont,                 color: 'var(--purple)' },
+    { label: 'Herstellingen deze maand', value: herst, color: 'var(--orange)' },
+    { label: 'Montages deze maand',      value: mont,  color: 'var(--purple)' },
   ].map(s => '<div class="stat-card"><div class="stat-label">' + s.label + '</div><div class="stat-value" style="color:' + s.color + '">' + s.value + '</div></div>').join('');
 
   // Omzetgrafiek
@@ -3026,6 +3048,38 @@ function renderDashboard() {
       ctx.fillStyle = '#94a3b8'; ctx.font = '10px system-ui'; ctx.textAlign = 'center';
       ctx.fillText(m, pad.left + slotW * i + slotW / 2, H - 6);
     });
+  }
+
+  // Maandoverzicht (huidig jaar): herstellingen / montages / omzet per maand
+  const maandNamen = ['Januari','Februari','Maart','April','Mei','Juni','Juli','Augustus','September','Oktober','November','December'];
+  const maandData = maandNamen.map(function(naam) { return { naam: naam, herst: 0, mont: 0, omzet: 0 }; });
+  realJobs.forEach(function(j) {
+    if (!j.datum) return;
+    const d = new Date(j.datum);
+    if (d.getFullYear() !== thisYear || isNaN(d)) return;
+    const m = d.getMonth();
+    if (j.type === 'Herstelling') maandData[m].herst++;
+    else if (j.type === 'Montage') maandData[m].mont++;
+    maandData[m].omzet += Number(j.prijs) || 0;
+  });
+  const jaarLabelEl = document.getElementById('maand-jaar-label');
+  if (jaarLabelEl) jaarLabelEl.textContent = thisYear;
+  const maandEl = document.getElementById('dashboard-maandoverzicht');
+  if (maandEl) {
+    const huidigeMaand = now.getMonth();
+    maandEl.innerHTML = maandData.map(function(m, idx) {
+      const isHuidig = idx === huidigeMaand;
+      const isToekomst = idx > huidigeMaand;
+      const rowBg = isHuidig ? 'background:var(--accent)08;' : '';
+      const dimStyle = isToekomst ? 'color:var(--text-muted);opacity:.5;' : '';
+      const fontW = isHuidig ? 'font-weight:700;' : '';
+      return '<tr style="border-bottom:1px solid var(--border);' + rowBg + '">'
+        + '<td style="padding:8px 18px;font-size:12px;' + dimStyle + fontW + '">' + m.naam + (isHuidig ? ' (huidig)' : '') + '</td>'
+        + '<td style="padding:8px 12px;text-align:right;font-size:13px;font-weight:600;color:' + (m.herst ? 'var(--orange)' : 'var(--text-muted)') + ';' + dimStyle + '">' + m.herst + '</td>'
+        + '<td style="padding:8px 12px;text-align:right;font-size:13px;font-weight:600;color:' + (m.mont ? 'var(--purple)' : 'var(--text-muted)') + ';' + dimStyle + '">' + m.mont + '</td>'
+        + '<td style="padding:8px 18px;text-align:right;font-size:13px;font-weight:700;' + dimStyle + '">' + (m.omzet ? fmtEuro(m.omzet) : '—') + '</td>'
+        + '</tr>';
+    }).join('');
   }
 
   // Openstaande leveringsbonnen
