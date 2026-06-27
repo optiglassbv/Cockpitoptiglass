@@ -237,8 +237,11 @@
 
   /* Grotere klikgebieden + responsive layout op touch */
   @media (max-width: 768px) {
-    /* body niet meer als flex (we zetten sidebar absoluut + slide-in) */
+    /* Voorkom horizontale page-scroll — alles binnen viewport-breedte houden */
+    html, body { overflow-x: hidden; max-width: 100vw; }
     body { display: block; }
+    #main { max-width: 100vw; overflow-x: hidden; box-sizing: border-box; }
+    .card, .section { max-width: 100%; box-sizing: border-box; overflow-x: hidden; }
 
     /* Sidebar slide-in vanaf links */
     #sidebar {
@@ -297,7 +300,14 @@
       grid-template-columns: 1fr !important;
     }
     .invoice-grid, .stats-grid { grid-template-columns: 1fr !important; }
-    #stats-grid { grid-template-columns: repeat(2,1fr) !important; }
+    #stats-grid { grid-template-columns: repeat(2,1fr) !important; gap: 8px !important; }
+    #stats-grid .stat-card { padding: 12px 10px !important; min-width: 0; overflow: hidden; }
+    #stats-grid .stat-label { font-size: 10px !important; line-height: 1.2; }
+    #stats-grid .stat-value { font-size: 18px !important; word-break: break-word; }
+    /* Algemene stat-kaart fallback voor inline cards (klantenfiche e.d.) */
+    .card { min-width: 0; }
+    .card div[style*="font-size:24px"] { font-size: 18px !important; }
+    .card div[style*="font-size:11px;font-weight:700;text-transform:uppercase"] { font-size: 10px !important; letter-spacing: .04em !important; }
 
     /* Klanten-detail tabs scrollbaar */
     [style*="border-bottom:1px solid var(--border);margin-bottom:16px"] { overflow-x: auto; }
@@ -306,9 +316,16 @@
     .modal { max-width: 95vw !important; padding: 18px !important; max-height: 88vh !important; }
     .modal-overlay { padding: 8px !important; align-items: flex-start !important; padding-top: 16px !important; }
 
-    /* Tabellen kleiner + horizontaal scrollbaar wrappen */
+    /* Tabellen kleiner + horizontaal scrollbaar BINNEN de kaart (geen page-overflow) */
     table { font-size: 12px; }
-    .card table { display: block; overflow-x: auto; white-space: nowrap; }
+    .card > table,
+    .card table {
+      display: block;
+      overflow-x: auto;
+      white-space: nowrap;
+      max-width: 100%;
+      -webkit-overflow-scrolling: touch;
+    }
 
     /* Inslijp-tabel velden naar 2 kolommen (was 8-9 op desktop) */
     .inslijp-grid-4, .inslijp-grid-3 { grid-template-columns: repeat(2,1fr) !important; }
