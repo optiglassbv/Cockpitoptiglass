@@ -231,20 +231,105 @@
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
-  /* Grotere klikgebieden op touch */
+  /* Hamburger / mobile menu knop — verborgen op desktop */
+  #mobile-menu-btn { display: none; }
+  #sidebar-backdrop { display: none; }
+
+  /* Grotere klikgebieden + responsive layout op touch */
   @media (max-width: 768px) {
-    .nav-btn { padding: 14px 16px !important; font-size: 14px !important; }
+    /* body niet meer als flex (we zetten sidebar absoluut + slide-in) */
+    body { display: block; }
+
+    /* Sidebar slide-in vanaf links */
+    #sidebar {
+      transform: translateX(-100%);
+      transition: transform .25s ease-out;
+      width: 250px !important;
+      box-shadow: 2px 0 14px rgba(0,0,0,.35);
+    }
+    #sidebar.open { transform: translateX(0); }
+
+    /* Main content — geen sidebar-marge, ruimte voor topbar */
+    #main { margin-left: 0 !important; padding: 64px 12px 24px !important; }
+
+    /* Hamburger-knop linksboven */
+    #mobile-menu-btn {
+      display: flex !important;
+      position: fixed; top: 8px; left: 8px;
+      z-index: 30;
+      width: 44px; height: 44px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      align-items: center; justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,.10);
+      color: var(--text);
+      padding: 0;
+    }
+    /* Backdrop achter sidebar als die open is */
+    #sidebar-backdrop.show {
+      display: block !important;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.45);
+      z-index: 9;
+    }
+
+    /* Touch targets */
+    .nav-btn { padding: 14px 18px !important; font-size: 15px !important; }
     .btn { min-height: 40px; }
     .form-control { min-height: 44px; font-size: 16px !important; }
-    .card { margin-bottom: 12px; }
+    .card { margin-bottom: 12px; padding: 14px; }
     .page-header { flex-direction: column; align-items: flex-start; gap: 10px; }
     .main-content { padding: 12px; }
-    /* Twee kolommen naar één op mobiel */
-    #tab-jobs .main-grid { grid-template-columns: 1fr !important; }
-    [style*="grid-template-columns:1fr 1fr"] { grid-template-columns: 1fr !important; }
-    [style*="grid-template-columns: 1fr 1fr"] { grid-template-columns: 1fr !important; }
-    /* Login scherm op mobiel */
+
+    /* Multi-column grids → stack op mobiel */
+    [style*="grid-template-columns:1fr 272px"],
+    [style*="grid-template-columns: 1fr 272px"],
+    [style*="grid-template-columns:1fr 340px"],
+    [style*="grid-template-columns: 1fr 340px"],
+    [style*="grid-template-columns:1fr 1fr 320px"],
+    [style*="grid-template-columns: 1fr 1fr 320px"],
+    [style*="grid-template-columns:320px 1fr"],
+    [style*="grid-template-columns: 320px 1fr"],
+    [style*="grid-template-columns:1fr 1fr"],
+    [style*="grid-template-columns: 1fr 1fr"] {
+      grid-template-columns: 1fr !important;
+    }
+    .invoice-grid, .stats-grid { grid-template-columns: 1fr !important; }
+    #stats-grid { grid-template-columns: repeat(2,1fr) !important; }
+
+    /* Klanten-detail tabs scrollbaar */
+    [style*="border-bottom:1px solid var(--border);margin-bottom:16px"] { overflow-x: auto; }
+
+    /* Modals — volle breedte met kleine marge */
+    .modal { max-width: 95vw !important; padding: 18px !important; max-height: 88vh !important; }
+    .modal-overlay { padding: 8px !important; align-items: flex-start !important; padding-top: 16px !important; }
+
+    /* Tabellen kleiner + horizontaal scrollbaar wrappen */
+    table { font-size: 12px; }
+    .card table { display: block; overflow-x: auto; white-space: nowrap; }
+
+    /* Inslijp-tabel velden naar 2 kolommen (was 8-9 op desktop) */
+    .inslijp-grid-4, .inslijp-grid-3 { grid-template-columns: repeat(2,1fr) !important; }
+    .inslijp-ref-header, .inslijp-ref-row,
+    .inslijp-ref-row-8, .inslijp-ref-row-6, .inslijp-ref-header-6 {
+      grid-template-columns: repeat(4,1fr) !important;
+      font-size: 11px;
+    }
+
+    /* Login scherm */
     .login-box { width: 90vw !important; padding: 32px 24px !important; }
+  }
+
+  /* iPad / tablet — sidebar zichtbaar maar smaller */
+  @media (min-width: 769px) and (max-width: 1024px) {
+    #sidebar { width: 180px; }
+    #main { margin-left: 180px; padding: 20px; }
+    [style*="grid-template-columns:1fr 1fr 320px"],
+    [style*="grid-template-columns: 1fr 1fr 320px"] {
+      grid-template-columns: 1fr 1fr !important;
+    }
   }
 
   @media print {
@@ -365,6 +450,12 @@
 
   <!-- APP — wordt pas zichtbaar na login -->
   <div id="app-container" style="display:none;">
+<!-- MOBIEL — hamburger knop + backdrop -->
+<button id="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Menu">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+</button>
+<div id="sidebar-backdrop" onclick="toggleSidebar(false)"></div>
+
 <!-- SIDEBAR -->
 <nav id="sidebar">
   <div class="logo" style="padding:16px 20px 12px;text-align:center;">
@@ -2948,6 +3039,17 @@ function showToast(msg, type='success') {
   setTimeout(() => t.style.display = 'none', 3500);
 }
 
+// ── MOBILE SIDEBAR TOGGLE ────────────────────────────────────────────────────
+function toggleSidebar(forceState) {
+  const sb = document.getElementById('sidebar');
+  const bd = document.getElementById('sidebar-backdrop');
+  if (!sb || !bd) return;
+  const isOpen = sb.classList.contains('open');
+  const shouldOpen = typeof forceState === 'boolean' ? forceState : !isOpen;
+  if (shouldOpen) { sb.classList.add('open'); bd.classList.add('show'); }
+  else { sb.classList.remove('open'); bd.classList.remove('show'); }
+}
+
 // ── TABS ─────────────────────────────────────────────────────────────────────
 function showTab(tab) {
   // Medewerker mag dashboard niet zien
@@ -2975,6 +3077,8 @@ function showTab(tab) {
   if (tab === 'tarieven') renderTarieven();
   if (tab === 'settings') loadNummerSettings();
   if (tab === 'leveringsbonnen') renderLeveringsbonnen();
+  // Sluit het mobiele menu na een navigatie
+  if (window.innerWidth <= 768) toggleSidebar(false);
   if (tab === 'settings') { loadSettings(); renderGebruikers(); }
 }
 
