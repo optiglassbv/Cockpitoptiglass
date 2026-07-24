@@ -1592,7 +1592,7 @@
                   </div>
                   <div class="form-group"><label class="form-label">Referentie</label><input class="form-control" id="m-ref" placeholder="REF-..."></div>
                   <div class="form-group"><label class="form-label">Status</label>
-                    <select class="form-control" id="m-status"><option>Wacht</option><option>In behandeling</option><option>Klaar</option></select>
+                    <select class="form-control" id="m-status"><option>Wacht</option><option>In behandeling</option><option>Klaar</option><option>Wacht facturatie</option><option>Gefactureerd</option></select>
                   </div>
                 </div>
                 <div class="form-group"><label class="form-label">Datum</label><input class="form-control" id="m-datum" type="date"></div>
@@ -2507,8 +2507,14 @@ function selectLbClient(clientId) {
   document.getElementById('lb-nieuw-selected').style.display = 'block';
   document.getElementById('lb-nieuw-totaal').style.display = 'none';
 
-  // Show open jobs for this client
-  const openJobs = jobs.filter(j => j.clientId === clientId && !j.gefactureerd && j.status !== 'Wacht facturatie' && j.type !== 'Verzending');
+  // Show open jobs for this client — alleen echt vrije opdrachten:
+  // niet gefactureerd, niet al aan een leveringsbon, geen verzending-lijn
+  const openJobs = jobs.filter(function(j) {
+    return j.clientId === clientId
+      && !j.gefactureerd
+      && !j.leveringsbon
+      && j.type !== 'Verzending';
+  });
   const ordersEl = document.getElementById('lb-nieuw-orders');
 
   if (openJobs.length === 0) {
@@ -3730,7 +3736,16 @@ function deleteJob(id) {
 }
 
 function updateJobStatus(id, status) {
-  jobs = jobs.map(j=>j.id===id?{...j,status,gefactureerd:status==='Gefactureerd'}:j);
+  // 'gefactureerd' NIET automatisch resetten wanneer status handmatig naar iets anders wordt gezet
+  // (voorheen: elke statuswijziging behalve 'Gefactureerd' zette de vlag op false — dat maakte
+  // reeds-gefactureerde opdrachten opeens terug 'open' voor nieuwe leveringsbonnen).
+  jobs = jobs.map(function(j) {
+    if (j.id !== id) return j;
+    const patch = { status: status };
+    // Alleen expliciet op true zetten als status 'Gefactureerd' is; nooit stilzwijgend op false.
+    if (status === 'Gefactureerd') patch.gefactureerd = true;
+    return Object.assign({}, j, patch);
+  });
   saveData();
 }
 
@@ -4850,7 +4865,8 @@ function qSaveJob() {
       btw: parseInt(document.getElementById('m-btw').value),
       datum: document.getElementById('m-datum').value,
       status: document.getElementById('m-status').value,
-      gefactureerd: false,
+      // gefactureerd volgt de gekozen status uit de dropdown
+      gefactureerd: document.getElementById('m-status').value === 'Gefactureerd',
       montageData,
     };
   } else {
