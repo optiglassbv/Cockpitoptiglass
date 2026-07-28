@@ -2636,6 +2636,11 @@ function renderLeveringsbonnen() {
         + '<button class="btn btn-ghost btn-sm" onclick="herdrukLeveringsbon(&quot;' + bon + '&quot;)" title="Herdrukken" style="padding:4px 8px;">'
           + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>'
         + '</button>'
+        + (bonJobs.some(function(j) { return j.gefactureerd; })
+            ? ''
+            : '<button class="btn btn-ghost btn-sm" onclick="verstuurBonNaarFactuur(&quot;' + bon + '&quot;)" title="Verstuur naar factuur (onFact)" style="padding:4px 8px;color:var(--accent);">'
+              + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>'
+            + '</button>')
         + '<button class="btn btn-ghost btn-sm" onclick="verwijderLeveringsbon(&quot;' + bon + '&quot;)" title="Verwijderen" style="padding:4px 8px;color:#ef4444;">'
           + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>'
         + '</button>'
@@ -4486,6 +4491,96 @@ async function sendToOnFact() {
   }
   btn.disabled = false;
   btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg> Verstuur naar onFact`;
+}
+
+// ── VERSTUUR ÉÉN LEVERINGSBON NAAR FACTUUR ─────────────────────────────────
+// Kortere variant van sendToOnFact() — stuurt 1 specifieke bon direct naar onFact.
+// Beschikbaar voor iedereen (ook medewerkers) via de knop in de leveringsbonnen-lijst.
+async function verstuurBonNaarFactuur(bonNummer) {
+  const settings = JSON.parse(localStorage.getItem('og_settings') || '{}');
+  const apiKey = settings.apiKey || '';
+  const uuid = settings.companyUuid || '';
+  if (!apiKey || !uuid) {
+    showToast('onFact API-sleutels ontbreken (contacteer de beheerder)', 'error');
+    return;
+  }
+  const bonJobs = jobs.filter(function(j) { return j.leveringsbon === bonNummer; });
+  if (!bonJobs.length) { showToast('Leveringsbon niet gevonden', 'error'); return; }
+  if (bonJobs.some(function(j) { return j.gefactureerd; })) {
+    showToast('Deze leveringsbon is al gefactureerd', 'error'); return;
+  }
+  const c = clientById(bonJobs[0].clientId);
+  if (!c) { showToast('Klant niet gevonden', 'error'); return; }
+
+  if (!confirm('Leveringsbon ' + bonNummer + ' versturen naar onFact voor ' + c.naam + '?')) return;
+
+  // Adres opsplitsen
+  const adresParts = (c.adres || '').split(',');
+  const street = (adresParts[0] || '').trim();
+  const plaatsParts = (adresParts[1] || '').trim().split(' ');
+  const citycode = plaatsParts[0] || '';
+  const city = plaatsParts.slice(1).join(' ') || '';
+
+  // Bouw invoice_lines — zelfde logica als sendToOnFact maar voor 1 bon
+  var hoofd = { prijs: 0, btw: bonJobs[0].btw || 21, vz: 0, vzLabel: 'Verzending', hasVzJob: false, _vzVeld: false };
+  bonJobs.forEach(function(j) { if (j.type === 'Verzending') hoofd.hasVzJob = true; });
+  bonJobs.forEach(function(j) {
+    if (j.type === 'Verzending') {
+      hoofd.vz += Number(j.prijs) || 0;
+      if (j.beschrijving) hoofd.vzLabel = j.beschrijving;
+    } else {
+      hoofd.prijs += Number(j.prijs) || 0;
+      if (!hoofd.hasVzJob && j.verzendkost && !hoofd._vzVeld) {
+        hoofd.vz += Number(j.verzendkost) || 0;
+        if (j.verzendlabel) hoofd.vzLabel = j.verzendlabel;
+        hoofd._vzVeld = true;
+      }
+    }
+  });
+  const lines = [{ order: 0, name: bonNummer, quantity: 1, price: Math.round(hoofd.prijs * 100) / 100, vat: hoofd.btw }];
+  if (hoofd.vz > 0) {
+    lines.push({ order: 1, name: hoofd.vzLabel + ' — ' + bonNummer, quantity: 1, price: Math.round(hoofd.vz * 100) / 100, vat: 21 });
+  }
+
+  const body = {
+    vattype: 'excl',
+    date: new Date().toISOString().slice(0, 10),
+    currency_id: 'EUR',
+    customer_eid: c.onfactId ? 'ONFACT_' + c.onfactId : c.id,
+    customer_name: c.naam,
+    customer_email: c.email || '',
+    customer_vat: c.btw || '',
+    customer_street: street,
+    customer_citycode: citycode,
+    customer_city: city,
+    invoice_lines: lines,
+  };
+
+  showToast('Versturen naar onFact…');
+  try {
+    const res = await fetch('https://api5.onfact.be/v1/invoices.json', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-SESSION-KEY': apiKey,
+        'X-COMPANY-UUID': uuid,
+        'X-ACTIONS': 'FIND-OR-CREATE-CUSTOMER',
+      },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      const ids = bonJobs.map(function(j) { return j.id; });
+      jobs = jobs.map(function(j) { return ids.includes(j.id) ? Object.assign({}, j, { status: 'Gefactureerd', gefactureerd: true }) : j; });
+      saveData();
+      showToast('✓ Factuur aangemaakt in onFact! (#' + (data.id || '') + ')');
+      renderLeveringsbonnen();
+    } else {
+      showToast('onFact fout: ' + (data.message || res.status), 'error');
+    }
+  } catch(e) {
+    showToast('Verbindingsfout met onFact', 'error');
+  }
 }
 
 // ── SETTINGS ─────────────────────────────────────────────────────────────────
